@@ -1,112 +1,62 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt">
 <head>
-  <base href="/obra_livre/">
+  <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta
-          content="IE=Edge"
-          http-equiv="X-UA-Compatible"
-  >
+  <title>Obra Livre — Acervo Digital Académico</title>
 
-  <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0"
-  >
+  <meta name="description" content="Obra Livre é um acervo digital para publicação e exploração de trabalhos académicos, incluindo teses, dissertações, monografias, artigos científicos e literatura.">
 
-  <!-- SEO -->
-  <meta
-          name="description"
-          content="Obra Livre é uma biblioteca digital para publicação e exploração de trabalhos académicos, incluindo teses, dissertações, monografias e artigos científicos."
-  >
+  <meta name="keywords" content="Obra Livre, acervo académico, trabalhos académicos, teses, dissertações, monografias, artigos científicos, literatura">
 
-  <meta
-          name="keywords"
-          content="Obra Livre, trabalhos académicos, teses, dissertações, monografias, artigos científicos, biblioteca digital"
-  >
+  <meta name="author" content="Obra Livre">
 
-  <meta
-          name="author"
-          content="Obra Livre"
-  >
+  <meta name="robots" content="index, follow">
 
-  <meta
-          name="robots"
-          content="index, follow"
-  >
+  <meta name="googlebot" content="index, follow">
 
-  <!-- Open Graph -->
-  <meta
-          property="og:title"
-          content="Obra Livre"
-  >
+  <link rel="canonical" href="https://ginho83-wq.github.io/obra_livre/">
 
-  <meta
-          property="og:description"
-          content="Biblioteca digital para publicação e exploração de trabalhos académicos."
-  >
+  <meta property="og:title" content="Obra Livre — Acervo Digital Académico">
 
-  <meta
-          property="og:type"
-          content="website"
-  >
+  <meta property="og:description" content="Explore teses, dissertações, monografias, artigos científicos e literatura no Acervo Obra Livre.">
 
-  <meta
-          property="og:url"
-          content="https://ginho83-wq.github.io/obra_livre/"
-  >
+  <meta property="og:url" content="https://ginho83-wq.github.io/obra_livre/">
 
-  <!-- Aplicação -->
-  <meta
-          name="mobile-web-app-capable"
-          content="yes"
-  >
+  <meta property="og:type" content="website">
 
-  <meta
-          name="apple-mobile-web-app-capable"
-          content="yes"
-  >
+  <meta property="og:site_name" content="Obra Livre">
 
-  <meta
-          name="apple-mobile-web-app-status-bar-style"
-          content="black"
-  >
+  <meta name="theme-color" content="#ffffff">
 
-  <meta
-          name="apple-mobile-web-app-title"
-          content="Obra Livre"
-  >
+  <link rel="icon" type="image/png" href="favicon.png">
 
-  <link
-          rel="apple-touch-icon"
-          href="icons/Icon-192.png"
-  >
+  <link rel="manifest" href="manifest.json">
 
-  <link
-          rel="icon"
-          type="image/png"
-          href="favicon.png"
-  >
+  <script>
+    var serviceWorkerVersion = null;
+  </script>
 
-  <title>Obra Livre — Biblioteca Digital Académica</title>
-
-  <link
-          rel="manifest"
-          href="manifest.json"
-  >
-
+  <script src="flutter.js" defer></script>
 </head>
 
 <body>
-
-<!-- Flutter -->
-<script
-        src="flutter_bootstrap.js"
-        async>
-</script>
-
+  <script>
+    window.addEventListener('load', function () {
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function (engineInitializer) {
+          engineInitializer.initializeEngine().then(function (appRunner) {
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
 </body>
 </html>
-
-
