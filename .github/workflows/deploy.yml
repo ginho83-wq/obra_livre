@@ -100,6 +100,7 @@ jobs:
 
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "ERRO: Supabase respondeu com HTTP ${HTTP_STATUS}."
+            echo "Resposta do Supabase:"
             cat resposta_supabase.json
             exit 1
           fi
@@ -108,7 +109,52 @@ jobs:
           cat resposta_supabase.json
 
       # ==========================================================
-      # 7. BUILD FLUTTER WEB
+      # 7. VERIFICAR SE O GERADOR SEO EXISTE
+      # ==========================================================
+      - name: Verificar arquivo gerador SEO
+        run: |
+          set -e
+
+          echo "=============================================="
+          echo "VERIFICANDO ARQUIVO SEO"
+          echo "=============================================="
+
+          echo ""
+          echo "Diretório atual:"
+          pwd
+
+          echo ""
+          echo "Conteúdo da raiz:"
+          ls -la
+
+          echo ""
+          echo "Conteúdo da pasta scripts:"
+
+          if [ ! -d "scripts" ]; then
+            echo "ERRO: A pasta scripts não existe."
+            exit 1
+          fi
+
+          ls -la scripts
+
+          echo ""
+          echo "Verificando:"
+          echo "scripts/generate_seo_pages.js"
+
+          if [ ! -f "scripts/generate_seo_pages.js" ]; then
+            echo ""
+            echo "ERRO: O arquivo scripts/generate_seo_pages.js não foi encontrado."
+            echo ""
+            echo "Arquivos JavaScript encontrados:"
+            find . -name "*.js" -type f | sort
+            exit 1
+          fi
+
+          echo ""
+          echo "Arquivo scripts/generate_seo_pages.js encontrado com sucesso."
+
+      # ==========================================================
+      # 8. CONSTRUIR APLICAÇÃO FLUTTER WEB
       # ==========================================================
       - name: Construir aplicação Flutter Web
         env:
@@ -124,10 +170,25 @@ jobs:
             --dart-define="SUPABASE_URL=$SUPABASE_URL" \
             --dart-define="SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
 
+          echo ""
           echo "Build Flutter concluído."
 
       # ==========================================================
-      # 8. GERAR PÁGINAS SEO INDIVIDUAIS
+      # 9. VERIFICAR BUILD
+      # ==========================================================
+      - name: Verificar build Flutter
+        run: |
+          set -e
+
+          if [ ! -f "build/web/index.html" ]; then
+            echo "ERRO: build/web/index.html não foi encontrado."
+            exit 1
+          fi
+
+          echo "build/web/index.html encontrado."
+
+      # ==========================================================
+      # 10. GERAR PÁGINAS SEO INDIVIDUAIS
       # ==========================================================
       - name: Gerar páginas SEO das obras
         env:
@@ -136,14 +197,17 @@ jobs:
         run: |
           set -e
 
-          echo "Gerando páginas SEO individuais..."
+          echo "=============================================="
+          echo "GERANDO PÁGINAS SEO INDIVIDUAIS"
+          echo "=============================================="
 
           node scripts/generate_seo_pages.js
 
-          echo "Páginas SEO geradas."
+          echo ""
+          echo "Páginas SEO geradas com sucesso."
 
       # ==========================================================
-      # 9. CRIAR 404 PARA FALLBACK DO FLUTTER
+      # 11. CRIAR FALLBACK 404
       # ==========================================================
       - name: Criar fallback 404
         run: |
@@ -151,36 +215,62 @@ jobs:
 
           cp build/web/index.html build/web/404.html
 
-          echo "404.html criado."
+          echo "404.html criado com sucesso."
 
       # ==========================================================
-      # 10. VERIFICAR ARQUIVOS SEO
+      # 12. VERIFICAR ARQUIVOS SEO
       # ==========================================================
-      - name: Verificar arquivos SEO
+      - name: Verificar arquivos SEO finais
         run: |
           set -e
 
-          test -f build/web/sitemap.xml
-          test -f build/web/robots.txt
+          echo "=============================================="
+          echo "VERIFICAÇÃO FINAL SEO"
+          echo "=============================================="
 
-          echo "sitemap.xml encontrado."
-          echo "robots.txt encontrado."
+          # Sitemap
+          if [ ! -f "build/web/sitemap.xml" ]; then
+            echo "ERRO: sitemap.xml não foi criado."
+            exit 1
+          fi
 
+          echo "✓ sitemap.xml encontrado."
+
+          # Robots
+          if [ ! -f "build/web/robots.txt" ]; then
+            echo "ERRO: robots.txt não foi criado."
+            exit 1
+          fi
+
+          echo "✓ robots.txt encontrado."
+
+          # Quantidade de URLs individuais
           echo ""
           echo "Quantidade de URLs individuais no sitemap:"
+
           grep -c "/obra/" build/web/sitemap.xml || true
 
+          # Quantidade de páginas individuais
           echo ""
           echo "Quantidade de páginas HTML individuais:"
-          find build/web/obra -name "index.html" 2>/dev/null | wc -l || true
+
+          find build/web/obra \
+            -type f \
+            -name "index.html" \
+            2>/dev/null | wc -l || true
 
           echo ""
-          echo "Arquivos principais:"
+          echo "Arquivos SEO:"
           ls -lh build/web/sitemap.xml
           ls -lh build/web/robots.txt
 
+          echo ""
+          echo "Primeiras URLs individuais encontradas:"
+
+          grep "/obra/" build/web/sitemap.xml | head -10 || true
+
       # ==========================================================
-      # 11. PUBLICAR NO GITHUB PAGES
+      # 13. PUBLICAR NO GITHUB PAGES
       # ==========================================================
       - name: Publicar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
