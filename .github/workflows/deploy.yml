@@ -18,42 +18,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
       # ==========================================================
       # 1. BAIXAR CÓDIGO
       # ==========================================================
-
       - name: Baixar código
         uses: actions/checkout@v4
-
 
       # ==========================================================
       # 2. CONFIGURAR FLUTTER
       # ==========================================================
-
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
 
+      # ==========================================================
+      # 3. CONFIGURAR NODE.JS
+      # ==========================================================
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       # ==========================================================
-      # 3. INSTALAR DEPENDÊNCIAS
+      # 4. INSTALAR DEPENDÊNCIAS
       # ==========================================================
-
       - name: Instalar dependências
         run: flutter pub get
 
-
       # ==========================================================
-      # 4. VERIFICAR SE OS SECRETS EXISTEM
+      # 5. VERIFICAR SECRETS DO SUPABASE
       # ==========================================================
-
       - name: Verificar configuração do Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
         run: |
           set -e
 
@@ -72,16 +71,13 @@ jobs:
           echo "SUPABASE_URL configurada."
           echo "SUPABASE_ANON_KEY configurada."
 
-
       # ==========================================================
-      # 5. TESTAR API DO SUPABASE
+      # 6. TESTAR CONEXÃO COM SUPABASE
       # ==========================================================
-
       - name: Testar conexão com Supabase
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
         run: |
           set -e
 
@@ -98,272 +94,96 @@ jobs:
             --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
             --header "Content-Type: application/json" \
             --header "Accept: application/json" \
-            "${SUPABASE_URL}/rest/v1/obras?select=id&limit=1")
+            "${SUPABASE_URL}/rest/v1/obras?select=id&status=eq.aprovada&limit=1")
 
           echo "Código HTTP recebido: ${HTTP_STATUS}"
 
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "ERRO: Supabase respondeu com HTTP ${HTTP_STATUS}."
-            echo "Resposta do Supabase:"
             cat resposta_supabase.json
             exit 1
           fi
 
           echo "API do Supabase respondeu corretamente."
-
           cat resposta_supabase.json
 
-
       # ==========================================================
-      # 6. GERAR SITEMAP COM OBRAS APROVADAS
+      # 7. BUILD FLUTTER WEB
       # ==========================================================
-
-      - name: Gerar sitemap com obras publicadas
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
-        run: |
-          set -e
-
-          SUPABASE_URL="${SUPABASE_URL%/}"
-
-          echo "Consultando obras aprovadas no Supabase..."
-
-          curl \
-            --fail \
-            --silent \
-            --show-error \
-            --request GET \
-            --header "apikey: ${SUPABASE_ANON_KEY}" \
-            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            --header "Content-Type: application/json" \
-            --header "Accept: application/json" \
-            "${SUPABASE_URL}/rest/v1/obras?select=id,data_publicacao&status=eq.aprovada&order=data_publicacao.desc" \
-            --output obras_publicadas.json
-
-          echo "Consulta concluída."
-
-          python3 - <<'PY'
-          import json
-          from datetime import datetime, timezone
-          from xml.sax.saxutils import escape
-
-          BASE_URL = "https://ginho83-wq.github.io/obra_livre"
-
-          # ======================================================
-          # LER OBRAS
-          # ======================================================
-
-          with open(
-              "obras_publicadas.json",
-              "r",
-              encoding="utf-8"
-          ) as arquivo:
-              obras = json.load(arquivo)
-
-          hoje = datetime.now(
-              timezone.utc
-          ).date().isoformat()
-
-          # ======================================================
-          # PÁGINAS PRINCIPAIS
-          # ======================================================
-
-          urls = [
-              (
-                  f"{BASE_URL}/",
-                  hoje,
-                  "weekly",
-                  "1.0"
-              ),
-              (
-                  f"{BASE_URL}/acervo",
-                  hoje,
-                  "weekly",
-                  "0.9"
-              ),
-              (
-                  f"{BASE_URL}/categoria/doutoramento",
-                  hoje,
-                  "monthly",
-                  "0.7"
-              ),
-              (
-                  f"{BASE_URL}/categoria/mestrado",
-                  hoje,
-                  "monthly",
-                  "0.7"
-              ),
-              (
-                  f"{BASE_URL}/categoria/monografia",
-                  hoje,
-                  "monthly",
-                  "0.7"
-              ),
-              (
-                  f"{BASE_URL}/categoria/artigos",
-                  hoje,
-                  "monthly",
-                  "0.7"
-              ),
-              (
-                  f"{BASE_URL}/categoria/literatura",
-                  hoje,
-                  "monthly",
-                  "0.7"
-              ),
-          ]
-
-          # ======================================================
-          # ADICIONAR CADA OBRA APROVADA
-          # ======================================================
-
-          for obra in obras:
-
-              obra_id = str(
-                  obra.get("id", "")
-              ).strip()
-
-              if not obra_id:
-                  continue
-
-              data_publicacao = obra.get(
-                  "data_publicacao"
-              )
-
-              if data_publicacao:
-                  lastmod = str(
-                      data_publicacao
-                  )[:10]
-              else:
-                  lastmod = hoje
-
-              urls.append(
-                  (
-                      f"{BASE_URL}/obra/{obra_id}",
-                      lastmod,
-                      "monthly",
-                      "0.8"
-                  )
-              )
-
-          # ======================================================
-          # CRIAR SITEMAP
-          # ======================================================
-
-          with open(
-              "web/sitemap.xml",
-              "w",
-              encoding="utf-8"
-          ) as sitemap:
-
-              sitemap.write(
-                  '<?xml version="1.0" encoding="UTF-8"?>\n'
-              )
-
-              sitemap.write(
-                  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-              )
-
-              for (
-                  loc,
-                  lastmod,
-                  changefreq,
-                  priority
-              ) in urls:
-
-                  sitemap.write("  <url>\n")
-
-                  sitemap.write(
-                      f"    <loc>{escape(loc)}</loc>\n"
-                  )
-
-                  sitemap.write(
-                      f"    <lastmod>{escape(lastmod)}</lastmod>\n"
-                  )
-
-                  sitemap.write(
-                      f"    <changefreq>{changefreq}</changefreq>\n"
-                  )
-
-                  sitemap.write(
-                      f"    <priority>{priority}</priority>\n"
-                  )
-
-                  sitemap.write("  </url>\n")
-
-              sitemap.write("</urlset>\n")
-
-          print(
-              f"Sitemap criado com {len(obras)} obras aprovadas."
-          )
-
-          PY
-
-
-      # ==========================================================
-      # 7. CONSTRUIR FLUTTER WEB
-      # ==========================================================
-
       - name: Construir aplicação Flutter Web
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
         run: |
           set -e
 
           echo "Construindo aplicação Flutter Web..."
-
-          if [ -z "$SUPABASE_URL" ]; then
-            echo "ERRO: SUPABASE_URL está vazia."
-            exit 1
-          fi
-
-          if [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "ERRO: SUPABASE_ANON_KEY está vazia."
-            exit 1
-          fi
-
-          echo "SUPABASE_URL recebida."
-          echo "SUPABASE_ANON_KEY recebida."
 
           flutter build web --release \
             --base-href "/obra_livre/" \
             --dart-define="SUPABASE_URL=$SUPABASE_URL" \
             --dart-define="SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
 
+          echo "Build Flutter concluído."
 
       # ==========================================================
-      # 8. VERIFICAR SITEMAP FINAL
+      # 8. GERAR PÁGINAS SEO INDIVIDUAIS
       # ==========================================================
+      - name: Gerar páginas SEO das obras
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -e
 
-      - name: Verificar sitemap final
+          echo "Gerando páginas SEO individuais..."
+
+          node scripts/generate_seo_pages.js
+
+          echo "Páginas SEO geradas."
+
+      # ==========================================================
+      # 9. CRIAR 404 PARA FALLBACK DO FLUTTER
+      # ==========================================================
+      - name: Criar fallback 404
+        run: |
+          set -e
+
+          cp build/web/index.html build/web/404.html
+
+          echo "404.html criado."
+
+      # ==========================================================
+      # 10. VERIFICAR ARQUIVOS SEO
+      # ==========================================================
+      - name: Verificar arquivos SEO
         run: |
           set -e
 
           test -f build/web/sitemap.xml
+          test -f build/web/robots.txt
 
-          echo "Sitemap encontrado."
+          echo "sitemap.xml encontrado."
+          echo "robots.txt encontrado."
 
-          echo "Quantidade de URLs individuais de obras:"
-
+          echo ""
+          echo "Quantidade de URLs individuais no sitemap:"
           grep -c "/obra/" build/web/sitemap.xml || true
 
-          echo "Sitemap final:"
+          echo ""
+          echo "Quantidade de páginas HTML individuais:"
+          find build/web/obra -name "index.html" 2>/dev/null | wc -l || true
 
-          cat build/web/sitemap.xml
-
+          echo ""
+          echo "Arquivos principais:"
+          ls -lh build/web/sitemap.xml
+          ls -lh build/web/robots.txt
 
       # ==========================================================
-      # 9. PUBLICAR NO GITHUB PAGES
+      # 11. PUBLICAR NO GITHUB PAGES
       # ==========================================================
-
       - name: Publicar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
-
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
-
