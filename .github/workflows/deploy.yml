@@ -220,6 +220,7 @@ jobs:
           # ======================================================
 
           for obra in obras:
+
               obra_id = str(
                   obra.get("id", "")
               ).strip()
@@ -306,11 +307,32 @@ jobs:
       # ==========================================================
 
       - name: Construir aplicação Flutter Web
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
         run: |
+          set -e
+
+          echo "Construindo aplicação Flutter Web..."
+
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "ERRO: SUPABASE_URL está vazia."
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "ERRO: SUPABASE_ANON_KEY está vazia."
+            exit 1
+          fi
+
+          echo "SUPABASE_URL recebida."
+          echo "SUPABASE_ANON_KEY recebida."
+
           flutter build web --release \
             --base-href "/obra_livre/" \
-            --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+            --dart-define="SUPABASE_URL=$SUPABASE_URL" \
+            --dart-define="SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
 
 
       # ==========================================================
@@ -344,3 +366,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
+
