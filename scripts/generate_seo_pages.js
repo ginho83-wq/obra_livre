@@ -2,12 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 const SITE_URL = 'https://ginho83-wq.github.io/obra_livre';
-
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
-
 const BUILD_DIR = path.join(process.cwd(), 'build', 'web');
-const INDEX_FILE = path.join(BUILD_DIR, 'index.html');
 
 if (!SUPABASE_URL) {
   console.error('ERRO: SUPABASE_URL nao foi configurada.');
@@ -19,8 +16,8 @@ if (!SUPABASE_ANON_KEY) {
   process.exit(1);
 }
 
-if (!fs.existsSync(INDEX_FILE)) {
-  console.error('ERRO: build/web/index.html nao foi encontrado.');
+if (!fs.existsSync(BUILD_DIR)) {
+  console.error('ERRO: build/web nao foi encontrado.');
   console.error('Execute primeiro: flutter build web');
   process.exit(1);
 }
@@ -73,7 +70,8 @@ async function carregarObras() {
     'autor',
     'categoria',
     'ano_obra',
-    'data_publicacao'
+    'data_publicacao',
+    'url_documento'
   ].join(',');
 
   const url =
@@ -128,8 +126,11 @@ function gerarJsonLd(obra, url) {
   const dados = {
     '@context': 'https://schema.org',
     '@type': 'ScholarlyArticle',
+
     headline: titulo,
+
     description: descricao,
+
     url: url,
 
     author: {
@@ -165,23 +166,7 @@ function gerarJsonLd(obra, url) {
   return escapeJsonLd(dados);
 }
 
-function substituirOuAdicionar(
-  html,
-  regex,
-  novoConteudo,
-  local
-) {
-  if (regex.test(html)) {
-    return html.replace(regex, novoConteudo);
-  }
-
-  return html.replace(
-    local,
-    `${local}\n    ${novoConteudo}`
-  );
-}
-
-function gerarHtml(baseHtml, obra) {
+function gerarHtmlObra(obra) {
   const id =
     limparTexto(obra.id);
 
@@ -192,200 +177,329 @@ function gerarHtml(baseHtml, obra) {
   const descricao =
     limitarDescricao(obra.descricao);
 
+  const descricaoCompleta =
+    limparTexto(obra.descricao);
+
   const autor =
     limparTexto(obra.autor);
 
   const categoria =
     limparTexto(obra.categoria);
 
+  const ano =
+    limparTexto(obra.ano_obra);
+
+  const dataPublicacao =
+    limparTexto(obra.data_publicacao);
+
   const url =
     obterUrlObra(id);
 
-  let html = baseHtml;
+  const urlDocumento =
+    limparTexto(obra.url_documento);
 
-  const novoTitulo =
-    `${escapeHtml(titulo)} | Obra Livre`;
+  const documentoHtml =
+    urlDocumento
+      ? `
+        <p>
+          <a
+            href="${escapeHtml(urlDocumento)}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir documento completo
+          </a>
+        </p>
+      `
+      : `
+        <p>
+          O documento desta obra nao esta disponivel
+          para abertura neste momento.
+        </p>
+      `;
 
-  const metaDescription =
-    `<meta name="description" content="${escapeHtml(descricao)}">`;
+  const anoHtml =
+    ano
+      ? `
+        <p>
+          <strong>Ano:</strong>
+          ${escapeHtml(ano)}
+        </p>
+      `
+      : '';
 
-  const metaAuthor =
-    `<meta name="author" content="${escapeHtml(
-      autor || 'Obra Livre'
-    )}">`;
+  const categoriaHtml =
+    categoria
+      ? `
+        <p>
+          <strong>Categoria:</strong>
+          ${escapeHtml(categoria)}
+        </p>
+      `
+      : '';
 
-  const metaRobots =
-    `<meta name="robots" content="index, follow">`;
+  const dataHtml =
+    dataPublicacao
+      ? `
+        <p>
+          <strong>Data de publicacao:</strong>
+          ${escapeHtml(dataPublicacao)}
+        </p>
+      `
+      : '';
 
-  const metaGooglebot =
-    `<meta name="googlebot" content="index, follow">`;
-
-  const metaKeywords =
-    `<meta name="keywords" content="${escapeHtml(
-      [
-        titulo,
-        autor,
-        categoria,
-        'trabalho academico',
-        'pesquisa cientifica',
-        'Obra Livre'
-      ]
-        .filter(Boolean)
-        .join(', ')
-    )}">`;
-
-  const ogTitle =
-    `<meta property="og:title" content="${escapeHtml(
-      titulo
-    )} | Obra Livre">`;
-
-  const ogDescription =
-    `<meta property="og:description" content="${escapeHtml(
-      descricao
-    )}">`;
-
-  const ogUrl =
-    `<meta property="og:url" content="${escapeHtml(
-      url
-    )}">`;
-
-  const ogType =
-    `<meta property="og:type" content="article">`;
-
-  const ogSiteName =
-    `<meta property="og:site_name" content="Obra Livre">`;
-
-  const ogLocale =
-    `<meta property="og:locale" content="pt_MZ">`;
-
-  const imagePreview =
-    `<meta name="robots" content="max-image-preview:large">`;
-
-  const canonical =
-    `<link rel="canonical" href="${escapeHtml(url)}">`;
+  const descricaoHtml =
+    descricaoCompleta
+      ? `
+        <p>
+          ${escapeHtml(descricaoCompleta)}
+        </p>
+      `
+      : `
+        <p>
+          Esta obra esta disponivel no acervo digital
+          Obra Livre.
+        </p>
+      `;
 
   const jsonLd =
-    `<script type="application/ld+json">${gerarJsonLd(
-      obra,
-      url
-    )}</script>`;
+    gerarJsonLd(obra, url);
 
-  /*
-   * ==========================================================
-   * METADADOS SEO
-   * ==========================================================
-   */
+  return `<!DOCTYPE html>
+<html lang="pt">
+<head>
 
-  html = substituirOuAdicionar(
-    html,
-    /<title>[\s\S]*?<\/title>/i,
-    `<title>${novoTitulo}</title>`,
-    '<head>'
-  );
+  <meta charset="UTF-8">
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+name=["']description["'][^>]*>/i,
-    metaDescription,
-    '<head>'
-  );
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+name=["']author["'][^>]*>/i,
-    metaAuthor,
-    '<head>'
-  );
+  <title>
+    ${escapeHtml(titulo)} | Obra Livre
+  </title>
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+name=["']robots["'][^>]*>/i,
-    metaRobots,
-    '<head>'
-  );
+  <meta
+    name="description"
+    content="${escapeHtml(descricao)}"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+name=["']googlebot["'][^>]*>/i,
-    metaGooglebot,
-    '<head>'
-  );
+  <meta
+    name="author"
+    content="${escapeHtml(autor || 'Obra Livre')}"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+name=["']keywords["'][^>]*>/i,
-    metaKeywords,
-    '<head>'
-  );
+  <meta
+    name="robots"
+    content="index, follow, max-image-preview:large"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<link\s+rel=["']canonical["'][^>]*>/i,
-    canonical,
-    '<head>'
-  );
+  <meta
+    name="googlebot"
+    content="index, follow"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+property=["']og:title["'][^>]*>/i,
-    ogTitle,
-    '<head>'
-  );
+  <link
+    rel="canonical"
+    href="${escapeHtml(url)}"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+property=["']og:description["'][^>]*>/i,
-    ogDescription,
-    '<head>'
-  );
+  <!-- Open Graph -->
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+property=["']og:url["'][^>]*>/i,
-    ogUrl,
-    '<head>'
-  );
+  <meta
+    property="og:title"
+    content="${escapeHtml(titulo)} | Obra Livre"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+property=["']og:type["'][^>]*>/i,
-    ogType,
-    '<head>'
-  );
+  <meta
+    property="og:description"
+    content="${escapeHtml(descricao)}"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+property=["']og:site_name["'][^>]*>/i,
-    ogSiteName,
-    '<head>'
-  );
+  <meta
+    property="og:type"
+    content="article"
+  >
 
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+property=["']og:locale["'][^>]*>/i,
-    ogLocale,
-    '<head>'
-  );
+  <meta
+    property="og:url"
+    content="${escapeHtml(url)}"
+  >
 
-  /*
-   * max-image-preview
-   */
-  html = substituirOuAdicionar(
-    html,
-    /<meta\s+name=["']robots["'][^>]*>/i,
-    `${metaRobots}\n    ${imagePreview}`,
-    '<head>'
-  );
+  <meta
+    property="og:site_name"
+    content="Obra Livre"
+  >
 
-  /*
-   * JSON-LD
-   */
-  html = html.replace(
-    /<head>/i,
-    `<head>\n    ${jsonLd}`
-  );
+  <meta
+    property="og:locale"
+    content="pt_MZ"
+  >
 
-  return html;
+  <!-- Dados estruturados -->
+
+  <script type="application/ld+json">
+    ${jsonLd}
+  </script>
+
+  <style>
+
+    body {
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      max-width: 900px;
+
+      margin: 0 auto;
+
+      padding: 30px;
+
+      line-height: 1.7;
+
+      color: #222;
+
+      background: #ffffff;
+    }
+
+    header {
+      border-bottom:
+        1px solid #ddd;
+
+      margin-bottom: 30px;
+
+      padding-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+
+      line-height: 1.3;
+
+      margin-bottom: 15px;
+    }
+
+    h2 {
+      margin-top: 30px;
+
+      border-bottom:
+        1px solid #eee;
+
+      padding-bottom: 8px;
+    }
+
+    .informacoes {
+      background: #f7f7f7;
+
+      padding: 20px;
+
+      border-radius: 8px;
+
+      margin-bottom: 30px;
+    }
+
+    .botao {
+      display: inline-block;
+
+      padding: 12px 18px;
+
+      margin-top: 10px;
+
+      border-radius: 6px;
+
+      text-decoration: none;
+
+      background: #333;
+
+      color: #fff;
+    }
+
+    footer {
+      margin-top: 50px;
+
+      padding-top: 20px;
+
+      border-top:
+        1px solid #ddd;
+    }
+
+    a {
+      color: #1a5fb4;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <header>
+
+    <h1>
+      ${escapeHtml(titulo)}
+    </h1>
+
+    <p>
+      <strong>Autor:</strong>
+      ${escapeHtml(autor || 'Autor nao informado')}
+    </p>
+
+  </header>
+
+  <main>
+
+    <section class="informacoes">
+
+      <h2>Informacoes da obra</h2>
+
+      ${categoriaHtml}
+
+      ${anoHtml}
+
+      ${dataHtml}
+
+    </section>
+
+    <article>
+
+      <h2>Resumo / Descricao</h2>
+
+      ${descricaoHtml}
+
+    </article>
+
+    <section>
+
+      <h2>Documento</h2>
+
+      ${documentoHtml}
+
+    </section>
+
+  </main>
+
+  <footer>
+
+    <p>
+      <a href="${SITE_URL}/">
+        ← Voltar ao Obra Livre
+      </a>
+    </p>
+
+    <p>
+      <a href="${SITE_URL}/acervo">
+        Ver acervo completo
+      </a>
+    </p>
+
+  </footer>
+
+</body>
+
+</html>
+`;
 }
 
 function obterLastMod(obra) {
@@ -538,12 +652,6 @@ async function main() {
   console.log('OBRA LIVRE - GERADOR DE PAGINAS SEO');
   console.log('==============================================');
 
-  const baseHtml =
-    fs.readFileSync(
-      INDEX_FILE,
-      'utf8'
-    );
-
   const obras =
     await carregarObras();
 
@@ -579,17 +687,26 @@ async function main() {
       }
     );
 
-    const html =
-      gerarHtml(
-        baseHtml,
-        obra
-      );
+    /*
+     * IMPORTANTE:
+     *
+     * A pagina individual NAO usa
+     * build/web/index.html do Flutter.
+     *
+     * Ela e um HTML independente.
+     */
 
-    fs.writeFileSync(
+    const html =
+      gerarHtmlObra(obra);
+
+    const arquivo =
       path.join(
         diretorio,
         'index.html'
-      ),
+      );
+
+    fs.writeFileSync(
+      arquivo,
       html,
       'utf8'
     );
@@ -638,13 +755,11 @@ main().catch((erro) => {
     '=============================================='
   );
 
-  console.error(erro.message);
+  console.error(
+    erro.message
+  );
 
   console.error('');
 
   process.exit(1);
 });
-
-
-
- 
