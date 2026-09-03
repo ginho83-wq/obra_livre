@@ -5,6 +5,14 @@ on:
     branches:
       - main
 
+  # Permite executar manualmente pelo GitHub
+  workflow_dispatch:
+
+  # Atualiza o sitemap automaticamente mesmo quando
+  # uma nova obra é aprovada apenas no Supabase.
+  schedule:
+    - cron: '0 2 * * *'
+
 permissions:
   contents: write
 
@@ -13,17 +21,192 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ==========================================================
+      # 1. BAIXAR O CÓDIGO
+      # ==========================================================
       - name: Baixar código
         uses: actions/checkout@v4
 
+      # ==========================================================
+      # 2. CONFIGURAR FLUTTER
+      # ==========================================================
       - name: Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
 
+      # ==========================================================
+      # 3. INSTALAR DEPENDÊNCIAS
+      # ==========================================================
       - name: Instalar dependências
         run: flutter pub get
 
+      # ==========================================================
+      # 4. BUSCAR OBRAS APROVADAS NO SUPABASE
+      #    E GERAR O SITEMAP AUTOMATICAMENTE
+      # ==========================================================
+      - name: Gerar sitemap com obras publicadas
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -e
+
+          SUPABASE_URL="${SUPABASE_URL%/}"
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Accept: application/json" \
+            "${SUPABASE_URL}/rest/v1/obras?select=id,data_publicacao&status=eq.aprovada&order=data_publicacao.desc" \
+            -o obras_publicadas.json
+
+          python3 - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from xml.sax.saxutils import escape
+
+          BASE_URL = "https://ginho83-wq.github.io/obra_livre"
+
+          # ----------------------------------------------------------
+          # Ler obras aprovadas vindas do Supabase
+          # ----------------------------------------------------------
+          with open(
+              "obras_publicadas.json",
+              "r",
+              encoding="utf-8"
+          ) as arquivo:
+              obras = json.load(arquivo)
+
+          hoje = datetime.now(timezone.utc).date().isoformat()
+
+          # ----------------------------------------------------------
+          # URLs principais do site
+          # ----------------------------------------------------------
+          urls = [
+              (
+                  f"{BASE_URL}/",
+                  hoje,
+                  "weekly",
+                  "1.0"
+              ),
+              (
+                  f"{BASE_URL}/acervo",
+                  hoje,
+                  "weekly",
+                  "0.9"
+              ),
+              (
+                  f"{BASE_URL}/categoria/doutoramento",
+                  hoje,
+                  "monthly",
+                  "0.7"
+              ),
+              (
+                  f"{BASE_URL}/categoria/mestrado",
+                  hoje,
+                  "monthly",
+                  "0.7"
+              ),
+              (
+                  f"{BASE_URL}/categoria/monografia",
+                  hoje,
+                  "monthly",
+                  "0.7"
+              ),
+              (
+                  f"{BASE_URL}/categoria/artigos",
+                  hoje,
+                  "monthly",
+                  "0.7"
+              ),
+              (
+                  f"{BASE_URL}/categoria/literatura",
+                  hoje,
+                  "monthly",
+                  "0.7"
+              ),
+          ]
+
+          # ----------------------------------------------------------
+          # Adicionar cada obra aprovada individualmente
+          # ----------------------------------------------------------
+          for obra in obras:
+              obra_id = str(obra.get("id", "")).strip()
+
+              if not obra_id:
+                  continue
+
+              data_publicacao = obra.get("data_publicacao")
+
+              if data_publicacao:
+                  lastmod = str(data_publicacao)[:10]
+              else:
+                  lastmod = hoje
+
+              urls.append(
+                  (
+                      f"{BASE_URL}/obra/{obra_id}",
+                      lastmod,
+                      "monthly",
+                      "0.8"
+                  )
+              )
+
+          # ----------------------------------------------------------
+          # Criar sitemap.xml
+          # ----------------------------------------------------------
+          with open(
+              "web/sitemap.xml",
+              "w",
+              encoding="utf-8"
+          ) as sitemap:
+
+              sitemap.write(
+                  '<?xml version="1.0" encoding="UTF-8"?>\n'
+              )
+
+              sitemap.write(
+                  '<urlset '
+                  'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+                  '\n'
+              )
+
+              for loc, lastmod, changefreq, priority in urls:
+
+                  sitemap.write("  <url>\n")
+
+                  sitemap.write(
+                      f"    <loc>{escape(loc)}</loc>\n"
+                  )
+
+                  sitemap.write(
+                      f"    <lastmod>{escape(lastmod)}</lastmod>\n"
+                  )
+
+                  sitemap.write(
+                      f"    <changefreq>{changefreq}</changefreq>\n"
+                  )
+
+                  sitemap.write(
+                      f"    <priority>{priority}</priority>\n"
+                  )
+
+                  sitemap.write("  </url>\n")
+
+              sitemap.write("</urlset>\n")
+
+          print(
+              f"Sitemap gerado com {len(obras)} obras publicadas."
+          )
+          PY
+
+      # ==========================================================
+      # 5. CONSTRUIR FLUTTER WEB
+      # ==========================================================
       - name: Construir aplicação Flutter Web
         run: |
           flutter build web --release \
@@ -31,9 +214,26 @@ jobs:
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
 
+      # ==========================================================
+      # 6. VERIFICAR SITEMAP GERADO
+      # ==========================================================
+      - name: Verificar sitemap final
+        run: |
+          test -f build/web/sitemap.xml
+
+          echo "Sitemap encontrado."
+
+          echo "Quantidade de URLs de obras:"
+          grep -c "/obra/" build/web/sitemap.xml || true
+
+          echo "Primeiras linhas do sitemap:"
+          head -n 20 build/web/sitemap.xml
+
+      # ==========================================================
+      # 7. PUBLICAR NO GITHUB PAGES
+      # ==========================================================
       - name: Publicar no GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
-
