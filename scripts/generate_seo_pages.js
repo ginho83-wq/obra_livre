@@ -1,44 +1,27 @@
 const fs = require('fs');
 const path = require('path');
 
-const SITE_URL =
-  'https://ginho83-wq.github.io/obra_livre';
+const SITE_URL = 'https://ginho83-wq.github.io/obra_livre';
 
-const SUPABASE_URL =
-  (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
-const SUPABASE_ANON_KEY =
-  process.env.SUPABASE_ANON_KEY || '';
-
-const BUILD_DIR =
-  path.join(process.cwd(), 'build', 'web');
-
-const INDEX_FILE =
-  path.join(BUILD_DIR, 'index.html');
+const BUILD_DIR = path.join(process.cwd(), 'build', 'web');
+const INDEX_FILE = path.join(BUILD_DIR, 'index.html');
 
 if (!SUPABASE_URL) {
-  console.error(
-    'ERRO: SUPABASE_URL não foi configurada.'
-  );
+  console.error('ERRO: SUPABASE_URL nao foi configurada.');
   process.exit(1);
 }
 
 if (!SUPABASE_ANON_KEY) {
-  console.error(
-    'ERRO: SUPABASE_ANON_KEY não foi configurada.'
-  );
+  console.error('ERRO: SUPABASE_ANON_KEY nao foi configurada.');
   process.exit(1);
 }
 
 if (!fs.existsSync(INDEX_FILE)) {
-  console.error(
-    'ERRO: build/web/index.html não foi encontrado.'
-  );
-
-  console.error(
-    'Execute o flutter build web antes deste script.'
-  );
-
+  console.error('ERRO: build/web/index.html nao foi encontrado.');
+  console.error('Execute primeiro: flutter build web');
   process.exit(1);
 }
 
@@ -60,6 +43,10 @@ function limparTexto(value) {
 function limitarDescricao(value) {
   const texto = limparTexto(value);
 
+  if (!texto) {
+    return 'Obra academica disponivel na biblioteca Obra Livre.';
+  }
+
   if (texto.length <= 160) {
     return texto;
   }
@@ -72,6 +59,10 @@ function escapeJsonLd(value) {
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
     .replace(/&/g, '\\u0026');
+}
+
+function obterUrlObra(id) {
+  return `${SITE_URL}/obra/${encodeURIComponent(id)}/`;
 }
 
 async function carregarObras() {
@@ -91,19 +82,13 @@ async function carregarObras() {
     `&status=eq.aprovada` +
     `&order=data_publicacao.desc`;
 
-  console.log(
-    'Consultando obras aprovadas no Supabase...'
-  );
+  console.log('Consultando obras aprovadas no Supabase...');
 
   const resposta = await fetch(url, {
     method: 'GET',
-
     headers: {
       apikey: SUPABASE_ANON_KEY,
-
-      Authorization:
-        `Bearer ${SUPABASE_ANON_KEY}`,
-
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
       Accept: 'application/json'
     }
   });
@@ -120,7 +105,7 @@ async function carregarObras() {
 
   if (!Array.isArray(obras)) {
     throw new Error(
-      'Resposta do Supabase não é uma lista de obras.'
+      'Resposta do Supabase nao e uma lista de obras.'
     );
   }
 
@@ -129,7 +114,7 @@ async function carregarObras() {
 
 function gerarJsonLd(obra, url) {
   const titulo =
-    limparTexto(obra.titulo);
+    limparTexto(obra.titulo) || 'Obra academica';
 
   const descricao =
     limitarDescricao(obra.descricao);
@@ -142,33 +127,25 @@ function gerarJsonLd(obra, url) {
 
   const dados = {
     '@context': 'https://schema.org',
-
     '@type': 'ScholarlyArticle',
-
     headline: titulo,
-
     description: descricao,
-
     url: url,
 
     author: {
       '@type': 'Person',
-      name: autor
+      name: autor || 'Autor nao informado'
     },
 
     publisher: {
       '@type': 'Organization',
-
       name: 'Obra Livre',
-
       url: `${SITE_URL}/`
     },
 
     isPartOf: {
       '@type': 'WebSite',
-
       name: 'Obra Livre',
-
       url: `${SITE_URL}/`
     }
   };
@@ -188,13 +165,29 @@ function gerarJsonLd(obra, url) {
   return escapeJsonLd(dados);
 }
 
+function substituirOuAdicionar(
+  html,
+  regex,
+  novoConteudo,
+  local
+) {
+  if (regex.test(html)) {
+    return html.replace(regex, novoConteudo);
+  }
+
+  return html.replace(
+    local,
+    `${local}\n    ${novoConteudo}`
+  );
+}
+
 function gerarHtml(baseHtml, obra) {
   const id =
     limparTexto(obra.id);
 
   const titulo =
     limparTexto(obra.titulo) ||
-    'Obra académica';
+    'Obra academica';
 
   const descricao =
     limitarDescricao(obra.descricao);
@@ -206,7 +199,7 @@ function gerarHtml(baseHtml, obra) {
     limparTexto(obra.categoria);
 
   const url =
-    `${SITE_URL}/obra/${encodeURIComponent(id)}/`;
+    obterUrlObra(id);
 
   let html = baseHtml;
 
@@ -214,9 +207,7 @@ function gerarHtml(baseHtml, obra) {
     `${escapeHtml(titulo)} | Obra Livre`;
 
   const metaDescription =
-    `<meta name="description" content="${escapeHtml(
-      descricao
-    )}">`;
+    `<meta name="description" content="${escapeHtml(descricao)}">`;
 
   const metaAuthor =
     `<meta name="author" content="${escapeHtml(
@@ -235,7 +226,8 @@ function gerarHtml(baseHtml, obra) {
         titulo,
         autor,
         categoria,
-        'trabalho académico',
+        'trabalho academico',
+        'pesquisa cientifica',
         'Obra Livre'
       ]
         .filter(Boolean)
@@ -267,12 +259,10 @@ function gerarHtml(baseHtml, obra) {
     `<meta property="og:locale" content="pt_MZ">`;
 
   const imagePreview =
-    `<meta name="max-image-preview" content="large">`;
+    `<meta name="robots" content="max-image-preview:large">`;
 
   const canonical =
-    `<link rel="canonical" href="${escapeHtml(
-      url
-    )}">`;
+    `<link rel="canonical" href="${escapeHtml(url)}">`;
 
   const jsonLd =
     `<script type="application/ld+json">${gerarJsonLd(
@@ -282,139 +272,141 @@ function gerarHtml(baseHtml, obra) {
 
   /*
    * ==========================================================
-   * GARANTIR QUE O FLUTTER RECONHEÇA A ROTA DA OBRA
-   * ==========================================================
-   *
-   * A página física fica em:
-   *
-   * /obra/ID/index.html
-   *
-   * O GitHub Pages entrega esse arquivo quando acessamos:
-   *
-   * /obra/ID/
-   *
-   * Antes de iniciar o Flutter, garantimos que o endereço
-   * atual seja exatamente a rota esperada pelo GoRouter.
-   */
-
-  const rotaFlutter =
-    `/obra/${encodeURIComponent(id)}`;
-
-  const scriptRota =
-    `
-<script>
-(function () {
-  var rotaEsperada = ${JSON.stringify(rotaFlutter)};
-
-  var caminhoAtual = window.location.pathname;
-
-  if (
-    caminhoAtual.endsWith('/index.html') ||
-    caminhoAtual === '${SITE_URL}/'
-  ) {
-    window.history.replaceState(
-      null,
-      '',
-      '${SITE_URL}' + rotaEsperada + '/'
-    );
-  }
-})();
-</script>
-`;
-
-  /*
-   * ==========================================================
-   * SUBSTITUIR METADADOS
+   * METADADOS SEO
    * ==========================================================
    */
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<title>[\s\S]*?<\/title>/i,
-    `<title>${novoTitulo}</title>`
+    `<title>${novoTitulo}</title>`,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+name=["']description["'][^>]*>/i,
-    metaDescription
+    metaDescription,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+name=["']author["'][^>]*>/i,
-    metaAuthor
+    metaAuthor,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+name=["']robots["'][^>]*>/i,
-    metaRobots
+    metaRobots,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+name=["']googlebot["'][^>]*>/i,
-    metaGooglebot
+    metaGooglebot,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+name=["']keywords["'][^>]*>/i,
-    metaKeywords
+    metaKeywords,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<link\s+rel=["']canonical["'][^>]*>/i,
-    canonical
+    canonical,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+property=["']og:title["'][^>]*>/i,
-    ogTitle
+    ogTitle,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+property=["']og:description["'][^>]*>/i,
-    ogDescription
+    ogDescription,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+property=["']og:url["'][^>]*>/i,
-    ogUrl
+    ogUrl,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+property=["']og:type["'][^>]*>/i,
-    ogType
+    ogType,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+property=["']og:site_name["'][^>]*>/i,
-    ogSiteName
+    ogSiteName,
+    '<head>'
   );
 
-  html = html.replace(
+  html = substituirOuAdicionar(
+    html,
     /<meta\s+property=["']og:locale["'][^>]*>/i,
-    ogLocale
-  );
-
-  html = html.replace(
-    /<meta\s+name=["']max-image-preview["'][^>]*>/i,
-    imagePreview
+    ogLocale,
+    '<head>'
   );
 
   /*
-   * Inserir JSON-LD
+   * max-image-preview
+   */
+  html = substituirOuAdicionar(
+    html,
+    /<meta\s+name=["']robots["'][^>]*>/i,
+    `${metaRobots}\n    ${imagePreview}`,
+    '<head>'
+  );
+
+  /*
+   * JSON-LD
    */
   html = html.replace(
     /<head>/i,
     `<head>\n    ${jsonLd}`
   );
 
-  /*
-   * Inserir script de garantia da rota
-   */
-  html = html.replace(
-    /<head>/i,
-    `<head>\n    ${scriptRota}`
-  );
-
   return html;
+}
+
+function obterLastMod(obra) {
+  if (obra.data_publicacao) {
+    const data =
+      new Date(obra.data_publicacao);
+
+    if (!Number.isNaN(data.getTime())) {
+      return data
+        .toISOString()
+        .substring(0, 10);
+    }
+  }
+
+  if (obra.ano_obra) {
+    return `${String(obra.ano_obra)}-01-01`;
+  }
+
+  return new Date()
+    .toISOString()
+    .substring(0, 10);
 }
 
 function gerarSitemap(obras) {
@@ -460,7 +452,7 @@ function gerarSitemap(obras) {
     },
 
     {
-      loc: `${SITE_URL}/categoria/artigos`,
+      loc: `${SITE_URL}/categoria/artigos-cientificos`,
       lastmod: hoje,
       changefreq: 'monthly',
       priority: '0.7'
@@ -482,22 +474,10 @@ function gerarSitemap(obras) {
       continue;
     }
 
-    let lastmod = hoje;
-
-    if (obra.data_publicacao) {
-      lastmod =
-        String(obra.data_publicacao)
-          .substring(0, 10);
-    }
-
     urls.push({
-      loc:
-        `${SITE_URL}/obra/${encodeURIComponent(id)}/`,
-
-      lastmod,
-
+      loc: obterUrlObra(id),
+      lastmod: obterLastMod(obra),
       changefreq: 'monthly',
-
       priority: '0.8'
     });
   }
@@ -554,17 +534,9 @@ function gerarRobots() {
 }
 
 async function main() {
-  console.log(
-    '=============================================='
-  );
-
-  console.log(
-    'OBRA LIVRE - GERADOR DE PÁGINAS SEO'
-  );
-
-  console.log(
-    '=============================================='
-  );
+  console.log('==============================================');
+  console.log('OBRA LIVRE - GERADOR DE PAGINAS SEO');
+  console.log('==============================================');
 
   const baseHtml =
     fs.readFileSync(
@@ -587,7 +559,7 @@ async function main() {
 
     if (!id) {
       console.warn(
-        'Obra ignorada porque não possui ID.'
+        'Obra ignorada porque nao possui ID.'
       );
 
       continue;
@@ -625,7 +597,7 @@ async function main() {
     paginasCriadas++;
 
     console.log(
-      `Página criada: /obra/${id}/`
+      `Pagina criada: /obra/${id}/`
     );
   }
 
@@ -637,31 +609,17 @@ async function main() {
   console.log('');
 
   console.log(
-    `Páginas individuais criadas: ${paginasCriadas}`
+    `Paginas individuais criadas: ${paginasCriadas}`
   );
 
   console.log(
     `URLs no sitemap: ${quantidadeUrls}`
   );
 
-  console.log(
-    'sitemap.xml criado.'
-  );
+  console.log('');
 
   console.log(
-    'robots.txt criado.'
-  );
-
-  console.log(
-    '=============================================='
-  );
-
-  console.log(
-    'SEO concluído com sucesso.'
-  );
-
-  console.log(
-    '=============================================='
+    'SEO concluido com sucesso.'
   );
 }
 
@@ -669,10 +627,24 @@ main().catch((erro) => {
   console.error('');
 
   console.error(
-    'ERRO AO GERAR PÁGINAS SEO:'
+    '=============================================='
   );
 
-  console.error(erro);
+  console.error(
+    'ERRO NO GERADOR SEO'
+  );
+
+  console.error(
+    '=============================================='
+  );
+
+  console.error(erro.message);
+
+  console.error('');
 
   process.exit(1);
 });
+
+
+
+ 
