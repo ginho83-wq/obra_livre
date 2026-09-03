@@ -34,9 +34,11 @@ if (!fs.existsSync(INDEX_FILE)) {
   console.error(
     'ERRO: build/web/index.html não foi encontrado.'
   );
+
   console.error(
     'Execute o flutter build web antes deste script.'
   );
+
   process.exit(1);
 }
 
@@ -95,10 +97,13 @@ async function carregarObras() {
 
   const resposta = await fetch(url, {
     method: 'GET',
+
     headers: {
       apikey: SUPABASE_ANON_KEY,
+
       Authorization:
         `Bearer ${SUPABASE_ANON_KEY}`,
+
       Accept: 'application/json'
     }
   });
@@ -137,22 +142,33 @@ function gerarJsonLd(obra, url) {
 
   const dados = {
     '@context': 'https://schema.org',
+
     '@type': 'ScholarlyArticle',
+
     headline: titulo,
+
     description: descricao,
+
     url: url,
+
     author: {
       '@type': 'Person',
       name: autor
     },
+
     publisher: {
       '@type': 'Organization',
+
       name: 'Obra Livre',
+
       url: `${SITE_URL}/`
     },
+
     isPartOf: {
       '@type': 'WebSite',
+
       name: 'Obra Livre',
+
       url: `${SITE_URL}/`
     }
   };
@@ -198,10 +214,14 @@ function gerarHtml(baseHtml, obra) {
     `${escapeHtml(titulo)} | Obra Livre`;
 
   const metaDescription =
-    `<meta name="description" content="${escapeHtml(descricao)}">`;
+    `<meta name="description" content="${escapeHtml(
+      descricao
+    )}">`;
 
   const metaAuthor =
-    `<meta name="author" content="${escapeHtml(autor || 'Obra Livre')}">`;
+    `<meta name="author" content="${escapeHtml(
+      autor || 'Obra Livre'
+    )}">`;
 
   const metaRobots =
     `<meta name="robots" content="index, follow">`;
@@ -259,6 +279,54 @@ function gerarHtml(baseHtml, obra) {
       obra,
       url
     )}</script>`;
+
+  /*
+   * ==========================================================
+   * GARANTIR QUE O FLUTTER RECONHEÇA A ROTA DA OBRA
+   * ==========================================================
+   *
+   * A página física fica em:
+   *
+   * /obra/ID/index.html
+   *
+   * O GitHub Pages entrega esse arquivo quando acessamos:
+   *
+   * /obra/ID/
+   *
+   * Antes de iniciar o Flutter, garantimos que o endereço
+   * atual seja exatamente a rota esperada pelo GoRouter.
+   */
+
+  const rotaFlutter =
+    `/obra/${encodeURIComponent(id)}`;
+
+  const scriptRota =
+    `
+<script>
+(function () {
+  var rotaEsperada = ${JSON.stringify(rotaFlutter)};
+
+  var caminhoAtual = window.location.pathname;
+
+  if (
+    caminhoAtual.endsWith('/index.html') ||
+    caminhoAtual === '${SITE_URL}/'
+  ) {
+    window.history.replaceState(
+      null,
+      '',
+      '${SITE_URL}' + rotaEsperada + '/'
+    );
+  }
+})();
+</script>
+`;
+
+  /*
+   * ==========================================================
+   * SUBSTITUIR METADADOS
+   * ==========================================================
+   */
 
   html = html.replace(
     /<title>[\s\S]*?<\/title>/i,
@@ -330,9 +398,20 @@ function gerarHtml(baseHtml, obra) {
     imagePreview
   );
 
+  /*
+   * Inserir JSON-LD
+   */
   html = html.replace(
     /<head>/i,
     `<head>\n    ${jsonLd}`
+  );
+
+  /*
+   * Inserir script de garantia da rota
+   */
+  html = html.replace(
+    /<head>/i,
+    `<head>\n    ${scriptRota}`
   );
 
   return html;
@@ -351,36 +430,42 @@ function gerarSitemap(obras) {
       changefreq: 'weekly',
       priority: '1.0'
     },
+
     {
       loc: `${SITE_URL}/acervo`,
       lastmod: hoje,
       changefreq: 'weekly',
       priority: '0.9'
     },
+
     {
       loc: `${SITE_URL}/categoria/doutoramento`,
       lastmod: hoje,
       changefreq: 'monthly',
       priority: '0.7'
     },
+
     {
       loc: `${SITE_URL}/categoria/mestrado`,
       lastmod: hoje,
       changefreq: 'monthly',
       priority: '0.7'
     },
+
     {
       loc: `${SITE_URL}/categoria/monografia`,
       lastmod: hoje,
       changefreq: 'monthly',
       priority: '0.7'
     },
+
     {
       loc: `${SITE_URL}/categoria/artigos`,
       lastmod: hoje,
       changefreq: 'monthly',
       priority: '0.7'
     },
+
     {
       loc: `${SITE_URL}/categoria/literatura`,
       lastmod: hoje,
@@ -408,8 +493,11 @@ function gerarSitemap(obras) {
     urls.push({
       loc:
         `${SITE_URL}/obra/${encodeURIComponent(id)}/`,
+
       lastmod,
+
       changefreq: 'monthly',
+
       priority: '0.8'
     });
   }
@@ -422,10 +510,19 @@ function gerarSitemap(obras) {
 
   for (const item of urls) {
     xml += '  <url>\n';
-    xml += `    <loc>${escapeHtml(item.loc)}</loc>\n`;
-    xml += `    <lastmod>${escapeHtml(item.lastmod)}</lastmod>\n`;
-    xml += `    <changefreq>${item.changefreq}</changefreq>\n`;
-    xml += `    <priority>${item.priority}</priority>\n`;
+
+    xml +=
+      `    <loc>${escapeHtml(item.loc)}</loc>\n`;
+
+    xml +=
+      `    <lastmod>${escapeHtml(item.lastmod)}</lastmod>\n`;
+
+    xml +=
+      `    <changefreq>${item.changefreq}</changefreq>\n`;
+
+    xml +=
+      `    <priority>${item.priority}</priority>\n`;
+
     xml += '  </url>\n';
   }
 
@@ -492,6 +589,7 @@ async function main() {
       console.warn(
         'Obra ignorada porque não possui ID.'
       );
+
       continue;
     }
 
@@ -537,6 +635,7 @@ async function main() {
   gerarRobots();
 
   console.log('');
+
   console.log(
     `Páginas individuais criadas: ${paginasCriadas}`
   );
@@ -568,9 +667,12 @@ async function main() {
 
 main().catch((erro) => {
   console.error('');
+
   console.error(
     'ERRO AO GERAR PÁGINAS SEO:'
   );
+
   console.error(erro);
+
   process.exit(1);
 });
