@@ -5,11 +5,8 @@ on:
     branches:
       - main
 
-  # Permite executar manualmente pelo GitHub
   workflow_dispatch:
 
-  # Atualiza o sitemap automaticamente mesmo quando
-  # uma nova obra é aprovada apenas no Supabase.
   schedule:
     - cron: '0 2 * * *'
 
@@ -21,11 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       # ==========================================================
-      # 1. BAIXAR O CÓDIGO
+      # 1. BAIXAR CÓDIGO
       # ==========================================================
       - name: Baixar código
         uses: actions/checkout@v4
+
 
       # ==========================================================
       # 2. CONFIGURAR FLUTTER
@@ -35,22 +34,26 @@ jobs:
         with:
           channel: stable
 
+
       # ==========================================================
       # 3. INSTALAR DEPENDÊNCIAS
       # ==========================================================
       - name: Instalar dependências
         run: flutter pub get
 
+
       # ==========================================================
       # 4. BUSCAR OBRAS APROVADAS NO SUPABASE
-      #    E GERAR O SITEMAP AUTOMATICAMENTE
       # ==========================================================
       - name: Gerar sitemap com obras publicadas
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
         run: |
           set -e
+
+          echo "Consultando obras aprovadas no Supabase..."
 
           SUPABASE_URL="${SUPABASE_URL%/}"
 
@@ -58,11 +61,15 @@ jobs:
             --fail \
             --silent \
             --show-error \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-            -H "Accept: application/json" \
+            --request GET \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            --header "Content-Type: application/json" \
+            --header "Accept: application/json" \
             "${SUPABASE_URL}/rest/v1/obras?select=id,data_publicacao&status=eq.aprovada&order=data_publicacao.desc" \
-            -o obras_publicadas.json
+            --output obras_publicadas.json
+
+          echo "Consulta concluída."
 
           python3 - <<'PY'
           import json
@@ -71,9 +78,9 @@ jobs:
 
           BASE_URL = "https://ginho83-wq.github.io/obra_livre"
 
-          # ----------------------------------------------------------
-          # Ler obras aprovadas vindas do Supabase
-          # ----------------------------------------------------------
+          # ------------------------------------------------------
+          # Ler resultado do Supabase
+          # ------------------------------------------------------
           with open(
               "obras_publicadas.json",
               "r",
@@ -81,11 +88,13 @@ jobs:
           ) as arquivo:
               obras = json.load(arquivo)
 
-          hoje = datetime.now(timezone.utc).date().isoformat()
+          hoje = datetime.now(
+              timezone.utc
+          ).date().isoformat()
 
-          # ----------------------------------------------------------
-          # URLs principais do site
-          # ----------------------------------------------------------
+          # ------------------------------------------------------
+          # Páginas principais
+          # ------------------------------------------------------
           urls = [
               (
                   f"{BASE_URL}/",
@@ -131,19 +140,26 @@ jobs:
               ),
           ]
 
-          # ----------------------------------------------------------
-          # Adicionar cada obra aprovada individualmente
-          # ----------------------------------------------------------
+          # ------------------------------------------------------
+          # Adicionar cada obra aprovada
+          # ------------------------------------------------------
           for obra in obras:
-              obra_id = str(obra.get("id", "")).strip()
+
+              obra_id = str(
+                  obra.get("id", "")
+              ).strip()
 
               if not obra_id:
                   continue
 
-              data_publicacao = obra.get("data_publicacao")
+              data_publicacao = obra.get(
+                  "data_publicacao"
+              )
 
               if data_publicacao:
-                  lastmod = str(data_publicacao)[:10]
+                  lastmod = str(
+                      data_publicacao
+                  )[:10]
               else:
                   lastmod = hoje
 
@@ -156,9 +172,9 @@ jobs:
                   )
               )
 
-          # ----------------------------------------------------------
+          # ------------------------------------------------------
           # Criar sitemap.xml
-          # ----------------------------------------------------------
+          # ------------------------------------------------------
           with open(
               "web/sitemap.xml",
               "w",
@@ -170,14 +186,19 @@ jobs:
               )
 
               sitemap.write(
-                  '<urlset '
-                  'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
-                  '\n'
+                  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
               )
 
-              for loc, lastmod, changefreq, priority in urls:
+              for (
+                  loc,
+                  lastmod,
+                  changefreq,
+                  priority
+              ) in urls:
 
-                  sitemap.write("  <url>\n")
+                  sitemap.write(
+                      "  <url>\n"
+                  )
 
                   sitemap.write(
                       f"    <loc>{escape(loc)}</loc>\n"
@@ -195,14 +216,19 @@ jobs:
                       f"    <priority>{priority}</priority>\n"
                   )
 
-                  sitemap.write("  </url>\n")
+                  sitemap.write(
+                      "  </url>\n"
+                  )
 
-              sitemap.write("</urlset>\n")
+              sitemap.write(
+                  "</urlset>\n"
+              )
 
           print(
-              f"Sitemap gerado com {len(obras)} obras publicadas."
+              f"Sitemap criado com {len(obras)} obras aprovadas."
           )
           PY
+
 
       # ==========================================================
       # 5. CONSTRUIR FLUTTER WEB
@@ -214,8 +240,9 @@ jobs:
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
 
+
       # ==========================================================
-      # 6. VERIFICAR SITEMAP GERADO
+      # 6. VERIFICAR SITEMAP
       # ==========================================================
       - name: Verificar sitemap final
         run: |
@@ -223,11 +250,12 @@ jobs:
 
           echo "Sitemap encontrado."
 
-          echo "Quantidade de URLs de obras:"
+          echo "Quantidade de URLs individuais de obras:"
           grep -c "/obra/" build/web/sitemap.xml || true
 
-          echo "Primeiras linhas do sitemap:"
-          head -n 20 build/web/sitemap.xml
+          echo "Sitemap:"
+          cat build/web/sitemap.xml
+
 
       # ==========================================================
       # 7. PUBLICAR NO GITHUB PAGES
