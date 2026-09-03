@@ -146,7 +146,7 @@ class AcervoRepository {
       'tamanho_arquivo';
 
   // ========================================================
-  // UUID
+  // VERIFICAR UUID
   // ========================================================
 
   bool _ehUuid(
@@ -250,6 +250,10 @@ class AcervoRepository {
 
       dynamic resposta;
 
+      // ======================================================
+      // BUSCA POR UUID
+      // ======================================================
+
       if (_ehUuid(valor)) {
         resposta = await _supabase
             .from('obras')
@@ -260,7 +264,13 @@ class AcervoRepository {
           'aprovada',
         )
             .maybeSingle();
-      } else {
+      }
+
+      // ======================================================
+      // BUSCA POR TÍTULO
+      // ======================================================
+
+      else {
         final resultados =
         await _supabase
             .from('obras')
@@ -277,7 +287,8 @@ class AcervoRepository {
 
         if (resultados is List &&
             resultados.isNotEmpty) {
-          resposta = resultados.first;
+          resposta =
+              resultados.first;
         }
       }
 
@@ -339,6 +350,52 @@ class AcervoRepository {
   }
 
   // ========================================================
+  // OBRAS APROVADAS PARA SITEMAP
+  // ========================================================
+
+  Future<List<AcervoObra>>
+  carregarObrasParaSitemap() async {
+    try {
+      final resposta =
+      await _supabase
+          .from('obras')
+          .select(
+        'id,'
+            'titulo,'
+            'data_publicacao',
+      )
+          .eq(
+        'status',
+        'aprovada',
+      )
+          .order(
+        'data_publicacao',
+        ascending: false,
+      );
+
+      return resposta
+          .map(
+            (item) => AcervoObra.fromMap(
+          Map<String, dynamic>.from(
+            item,
+          ),
+        ),
+      )
+          .toList();
+    } on PostgrestException catch (e) {
+      throw Exception(
+        'Erro ao carregar obras para sitemap: '
+            '${e.message}',
+      );
+    } catch (_) {
+      throw Exception(
+        'Não foi possível carregar '
+            'as obras para o sitemap.',
+      );
+    }
+  }
+
+  // ========================================================
   // POR CATEGORIA
   // ========================================================
 
@@ -373,7 +430,8 @@ class AcervoRepository {
       );
     } catch (_) {
       throw Exception(
-        'Não foi possível carregar esta categoria.',
+        'Não foi possível carregar '
+            'esta categoria.',
       );
     }
   }
@@ -382,12 +440,14 @@ class AcervoRepository {
   // PESQUISA
   // ========================================================
 
-  Future<List<AcervoObra>> pesquisarAcervo({
+  Future<List<AcervoObra>>
+  pesquisarAcervo({
     String query = '',
     String categoria = 'Todas',
     int? ano,
     String autor = '',
-    String ordenacao = 'Mais recentes',
+    String ordenacao =
+    'Mais recentes',
   }) async {
     try {
       dynamic consulta =
@@ -480,7 +540,8 @@ class AcervoRepository {
       );
     } catch (_) {
       throw Exception(
-        'Não foi possível pesquisar o acervo.',
+        'Não foi possível pesquisar '
+            'o acervo.',
       );
     }
   }
@@ -514,7 +575,8 @@ class AcervoRepository {
       );
     } catch (_) {
       throw Exception(
-        'Não foi possível carregar as obras recentes.',
+        'Não foi possível carregar '
+            'as obras recentes.',
       );
     }
   }
@@ -551,9 +613,9 @@ class AcervoRepository {
       );
     } catch (_) {
       throw Exception(
-        'Não foi possível carregar os destaques.',
+        'Não foi possível carregar '
+            'os destaques.',
       );
     }
   }
 }
-

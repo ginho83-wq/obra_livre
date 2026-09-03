@@ -3,13 +3,11 @@ import 'package:flutter/material.dart';
 import '../dados/obras_recentes.dart';
 import '../repositorios/acervo_repository.dart';
 import '../widgets/cartao_obra_widget.dart';
-import '../widgets/obra_detalhes_dialog.dart';
 import '../widgets/paginacao_google_widget.dart';
 
 // ==========================================================
 // ACERVO RESULTADOS PAGE
 // ==========================================================
-
 class AcervoResultadosPage extends StatefulWidget {
   final String query;
   final String categoria;
@@ -64,19 +62,20 @@ class _AcervoResultadosPageState
   // ==========================================================
   // INIT
   // ==========================================================
-
   @override
   void initState() {
     super.initState();
 
-    _consultaAtual = widget.query.trim();
+    _consultaAtual =
+        widget.query.trim();
 
     _pesquisaController =
         TextEditingController(
           text: _consultaAtual,
         );
 
-    _autorPesquisa = widget.autor.trim();
+    _autorPesquisa =
+        widget.autor.trim();
 
     _autorController =
         TextEditingController(
@@ -84,9 +83,8 @@ class _AcervoResultadosPageState
         );
 
     _categoriaSelecionada =
-    AcervoRepository.categorias.contains(
-      widget.categoria,
-    )
+    AcervoRepository.categorias
+        .contains(widget.categoria)
         ? widget.categoria
         : 'Todas';
 
@@ -105,9 +103,11 @@ class _AcervoResultadosPageState
 
     if (_consultaAtual.isNotEmpty ||
         _categoriaSelecionada != 'Todas' ||
-        _anoSelecionado != 'Todos os anos' ||
+        _anoSelecionado !=
+            'Todos os anos' ||
         _autorPesquisa.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) {
         _carregarResultados(
           primeiraPagina: true,
         );
@@ -118,7 +118,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // DISPOSE
   // ==========================================================
-
   @override
   void dispose() {
     _pesquisaController.dispose();
@@ -129,7 +128,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // PESQUISA PELA LUPA
   // ==========================================================
-
   Future<void> _abrirPesquisa() async {
     _pesquisaController.text =
         _consultaAtual;
@@ -140,15 +138,14 @@ class _AcervoResultadosPageState
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: Colors.white,
-
           title: const Text(
             'Pesquisar no acervo',
             style: TextStyle(
               fontSize: 19,
-              fontWeight: FontWeight.w600,
+              fontWeight:
+              FontWeight.w600,
             ),
           ),
-
           content: SizedBox(
             width: 420,
             child: TextField(
@@ -157,23 +154,17 @@ class _AcervoResultadosPageState
               autofocus: true,
               textInputAction:
               TextInputAction.search,
-
-              decoration:
-              InputDecoration(
+              decoration: InputDecoration(
                 hintText:
                 'Título, autor, tema ou categoria...',
-
                 prefixIcon:
                 const Icon(
                   Icons.search,
                   size: 20,
                 ),
-
                 border:
                 const OutlineInputBorder(),
-
                 isDense: true,
-
                 suffixIcon:
                 IconButton(
                   tooltip: 'Limpar',
@@ -188,7 +179,6 @@ class _AcervoResultadosPageState
                   },
                 ),
               ),
-
               onSubmitted: (valor) {
                 Navigator.of(
                   dialogContext,
@@ -198,7 +188,6 @@ class _AcervoResultadosPageState
               },
             ),
           ),
-
           actions: [
             TextButton(
               onPressed: () {
@@ -211,7 +200,6 @@ class _AcervoResultadosPageState
                 'Cancelar',
               ),
             ),
-
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(
@@ -222,18 +210,14 @@ class _AcervoResultadosPageState
                       .trim(),
                 );
               },
-
-              icon:
-              const Icon(
+              icon: const Icon(
                 Icons.search,
                 size: 18,
               ),
-
               label:
               const Text(
                 'Pesquisar',
               ),
-
               style:
               ElevatedButton.styleFrom(
                 backgroundColor:
@@ -266,7 +250,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // PESQUISA
   // ==========================================================
-
   Future<void> _pesquisar(
       String pesquisa,
       ) async {
@@ -286,7 +269,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // CARREGAR RESULTADOS
   // ==========================================================
-
   Future<void> _carregarResultados({
     bool primeiraPagina = true,
   }) async {
@@ -332,9 +314,7 @@ class _AcervoResultadosPageState
 
       setState(() {
         _obras = resultados;
-
         _carregando = false;
-
         _pesquisaRealizada = true;
 
         if (_obras.isEmpty) {
@@ -352,7 +332,6 @@ class _AcervoResultadosPageState
 
       setState(() {
         _obras = [];
-
         _carregando = false;
 
         _erro = e
@@ -363,7 +342,6 @@ class _AcervoResultadosPageState
         );
 
         _paginaAtual = 1;
-
         _pesquisaRealizada = true;
       });
     }
@@ -372,74 +350,49 @@ class _AcervoResultadosPageState
   // ==========================================================
   // FILTRO — CATEGORIA
   // ==========================================================
-
   Widget _construirFiltroCategoria() {
     return SizedBox(
       width: 250,
       height: 48,
       child: Container(
         height: 48,
-
-        decoration:
-        BoxDecoration(
+        decoration: BoxDecoration(
           color:
-          const Color(
-            0xFFE4E6E9,
-          ),
+          const Color(0xFFE4E6E9),
           borderRadius:
-          BorderRadius.circular(
-            6,
-          ),
+          BorderRadius.circular(6),
         ),
-
         child:
         DropdownButtonHideUnderline(
           child:
           DropdownButton<String>(
             value:
             _categoriaSelecionada,
-
             isExpanded: true,
-
             alignment:
             AlignmentDirectional
                 .centerStart,
-
-            icon:
-            const Padding(
-              padding:
-              EdgeInsets.only(
+            icon: const Padding(
+              padding: EdgeInsets.only(
                 right: 12,
               ),
-              child:
-              Icon(
+              child: Icon(
                 Icons
                     .keyboard_arrow_down,
                 size: 21,
-                color:
-                Colors.black54,
+                color: Colors.black54,
               ),
             ),
-
-            dropdownColor:
-            Colors.white,
-
+            dropdownColor: Colors.white,
             borderRadius:
-            BorderRadius.circular(
-              4,
-            ),
-
+            BorderRadius.circular(4),
             menuMaxHeight: 350,
-
-            style:
-            const TextStyle(
+            style: const TextStyle(
               fontSize: 14,
-              color:
-              Colors.black87,
+              color: Colors.black87,
               fontWeight:
               FontWeight.w500,
             ),
-
             items:
             AcervoRepository
                 .categorias
@@ -447,29 +400,21 @@ class _AcervoResultadosPageState
                   (categoria) {
                 return DropdownMenuItem<
                     String>(
-                  value:
-                  categoria,
-
+                  value: categoria,
                   alignment:
                   AlignmentDirectional
                       .centerStart,
-
-                  child:
-                  Padding(
+                  child: Padding(
                     padding:
                     const EdgeInsets
                         .only(
                       left: 12,
                     ),
-                    child:
-                    Text(
-                      categoria ==
-                          'Todas'
+                    child: Text(
+                      categoria == 'Todas'
                           ? 'Categoria'
                           : categoria,
-
                       maxLines: 1,
-
                       overflow:
                       TextOverflow
                           .ellipsis,
@@ -478,7 +423,6 @@ class _AcervoResultadosPageState
                 );
               },
             ).toList(),
-
             selectedItemBuilder:
                 (context) {
               return AcervoRepository
@@ -487,29 +431,21 @@ class _AcervoResultadosPageState
                     (categoria) {
                   return Align(
                     alignment:
-                    Alignment
-                        .centerLeft,
-
-                    child:
-                    Padding(
+                    Alignment.centerLeft,
+                    child: Padding(
                       padding:
                       const EdgeInsets
                           .only(
                         left: 14,
                       ),
-                      child:
-                      Text(
-                        categoria ==
-                            'Todas'
+                      child: Text(
+                        categoria == 'Todas'
                             ? 'Categoria'
                             : categoria,
-
                         maxLines: 1,
-
                         overflow:
                         TextOverflow
                             .ellipsis,
-
                         style:
                         const TextStyle(
                           fontSize: 14,
@@ -524,7 +460,6 @@ class _AcervoResultadosPageState
                 },
               ).toList();
             },
-
             onChanged: (valor) {
               if (valor == null) {
                 return;
@@ -546,9 +481,7 @@ class _AcervoResultadosPageState
   // ==========================================================
   // ANOS DISPONÍVEIS
   // ==========================================================
-
-  List<String>
-  get _anosDisponiveis {
+  List<String> get _anosDisponiveis {
     final anos = <int>{};
 
     for (final obra in _obras) {
@@ -578,8 +511,7 @@ class _AcervoResultadosPageState
 
     return lista
         .map(
-          (ano) =>
-          ano.toString(),
+          (ano) => ano.toString(),
     )
         .toList();
   }
@@ -587,7 +519,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // PAGINAÇÃO
   // ==========================================================
-
   int get _totalPaginas {
     if (_obras.isEmpty) {
       return 1;
@@ -596,12 +527,10 @@ class _AcervoResultadosPageState
     return (
         _obras.length /
             _obrasPorPagina
-    )
-        .ceil();
+    ).ceil();
   }
 
-  List<AcervoObra>
-  get _obrasDaPagina {
+  List<AcervoObra> get _obrasDaPagina {
     if (_obras.isEmpty) {
       return [];
     }
@@ -610,8 +539,7 @@ class _AcervoResultadosPageState
         (_paginaAtual - 1) *
             _obrasPorPagina;
 
-    if (inicio >=
-        _obras.length) {
+    if (inicio >= _obras.length) {
       return [];
     }
 
@@ -643,66 +571,30 @@ class _AcervoResultadosPageState
   }
 
   // ==========================================================
-  // ABRIR DETALHES DA OBRA
-  // ==========================================================
-
-  void _abrirObra(
-      AcervoObra obra,
-      ) {
-    final id =
-    obra.id.toString().trim();
-
-    if (id.isEmpty) {
-      return;
-    }
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return ObraDetalhesDialog(
-          id: id,
-        );
-      },
-    );
-  }
-
-  // ==========================================================
   // CARTÃO DA OBRA
   //
   // IMPORTANTE:
-  // O Acervo agora usa exatamente o
-  // CartaoObraWidget da Vitrine/Home.
+  // O CartaoObraWidget agora é responsável por
+  // abrir a página individual através de obra.id.
   // ==========================================================
-
   Widget _construirObra(
       AcervoObra obra,
       ) {
-    final obraRecente =
-    ObraRecente(
+    final obraRecente = ObraRecente(
       id: obra.id,
       titulo: obra.titulo,
-
-      // O CartaoObraWidget utiliza
-      // "resumo". No Acervo temos
-      // "descricao".
       resumo: obra.descricao,
-
       autor: obra.autor,
       coautores: obra.coautores,
       categoria: obra.categoria,
       urlDocumento:
       obra.urlDocumento,
-
       dataPublicacao:
       obra.dataPublicacao
           ?.toIso8601String() ??
           '',
-
       status: 'publicada',
-
-      anoObra:
-      obra.anoObra,
+      anoObra: obra.anoObra,
     );
 
     return Padding(
@@ -710,9 +602,7 @@ class _AcervoResultadosPageState
       const EdgeInsets.only(
         bottom: 28,
       ),
-
-      child:
-      CartaoObraWidget(
+      child: CartaoObraWidget(
         obra: obraRecente,
       ),
     );
@@ -721,27 +611,18 @@ class _AcervoResultadosPageState
   // ==========================================================
   // FILTRO — ANO
   // ==========================================================
-
   Widget _construirFiltroAno() {
     return SizedBox(
       width: 145,
       height: 48,
-
       child: Container(
         height: 48,
-
-        decoration:
-        BoxDecoration(
+        decoration: BoxDecoration(
           color:
-          const Color(
-            0xFFE9EAEC,
-          ),
+          const Color(0xFFE9EAEC),
           borderRadius:
-          BorderRadius.circular(
-            4,
-          ),
+          BorderRadius.circular(4),
         ),
-
         child:
         DropdownButtonHideUnderline(
           child:
@@ -751,24 +632,18 @@ class _AcervoResultadosPageState
                 'Todos os anos'
                 ? null
                 : _anoSelecionado,
-
-            hint:
-            const Row(
+            hint: const Row(
               children: [
                 Icon(
                   Icons
                       .calendar_today_outlined,
                   size: 17,
-                  color:
-                  Colors.black87,
+                  color: Colors.black87,
                 ),
-                SizedBox(
-                  width: 8,
-                ),
+                SizedBox(width: 8),
                 Text(
                   'Ano',
-                  style:
-                  TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     color:
                     Colors.black87,
@@ -776,56 +651,36 @@ class _AcervoResultadosPageState
                 ),
               ],
             ),
-
             isExpanded: true,
-
             alignment:
             AlignmentDirectional
                 .centerStart,
-
-            icon:
-            const Padding(
-              padding:
-              EdgeInsets.only(
+            icon: const Padding(
+              padding: EdgeInsets.only(
                 right: 10,
               ),
-              child:
-              Icon(
+              child: Icon(
                 Icons
                     .keyboard_arrow_down,
                 size: 19,
-                color:
-                Colors.black54,
+                color: Colors.black54,
               ),
             ),
-
-            dropdownColor:
-            Colors.white,
-
+            dropdownColor: Colors.white,
             borderRadius:
-            BorderRadius.circular(
-              4,
-            ),
-
+            BorderRadius.circular(4),
             menuMaxHeight: 350,
-
-            style:
-            const TextStyle(
+            style: const TextStyle(
               fontSize: 13,
-              color:
-              Colors.black87,
+              color: Colors.black87,
             ),
-
             items:
-            _anosDisponiveis
-                .map(
+            _anosDisponiveis.map(
                   (ano) {
                 return DropdownMenuItem<
                     String>(
                   value: ano,
-
-                  child:
-                  Text(
+                  child: Text(
                     ano,
                     maxLines: 1,
                     overflow:
@@ -839,7 +694,6 @@ class _AcervoResultadosPageState
                 );
               },
             ).toList(),
-
             selectedItemBuilder:
                 (context) {
               return _anosDisponiveis
@@ -858,8 +712,7 @@ class _AcervoResultadosPageState
                         width: 8,
                       ),
                       Expanded(
-                        child:
-                        Text(
+                        child: Text(
                           ano,
                           maxLines: 1,
                           overflow:
@@ -878,7 +731,6 @@ class _AcervoResultadosPageState
                 },
               ).toList();
             },
-
             onChanged: (valor) {
               if (valor == null) {
                 return;
@@ -900,144 +752,98 @@ class _AcervoResultadosPageState
   // ==========================================================
   // FILTRO — ORDENAÇÃO
   // ==========================================================
-
-  Widget
-  _construirFiltroOrdenacao() {
+  Widget _construirFiltroOrdenacao() {
     return SizedBox(
       width: 180,
       height: 48,
-
       child: Container(
         height: 48,
-
-        decoration:
-        BoxDecoration(
+        decoration: BoxDecoration(
           color:
-          const Color(
-            0xFFE9EAEC,
-          ),
+          const Color(0xFFE9EAEC),
           borderRadius:
-          BorderRadius.circular(
-            4,
-          ),
+          BorderRadius.circular(4),
         ),
-
         child:
         DropdownButtonHideUnderline(
           child:
           DropdownButton<String>(
             value: _ordenacao,
-
             isExpanded: true,
-
             alignment:
             AlignmentDirectional
                 .centerStart,
-
-            icon:
-            const Padding(
-              padding:
-              EdgeInsets.only(
+            icon: const Padding(
+              padding: EdgeInsets.only(
                 right: 10,
               ),
-              child:
-              Icon(
+              child: Icon(
                 Icons
                     .keyboard_arrow_down,
                 size: 19,
-                color:
-                Colors.black54,
+                color: Colors.black54,
               ),
             ),
-
-            dropdownColor:
-            Colors.white,
-
+            dropdownColor: Colors.white,
             borderRadius:
-            BorderRadius.circular(
-              4,
-            ),
-
-            style:
-            const TextStyle(
+            BorderRadius.circular(4),
+            style: const TextStyle(
               fontSize: 13,
-              color:
-              Colors.black87,
+              color: Colors.black87,
             ),
-
             items: const [
               DropdownMenuItem(
-                value:
-                'Mais recentes',
-
+                value: 'Mais recentes',
                 child: Row(
                   children: [
                     Icon(
                       Icons.sort,
                       size: 18,
-                      color:
-                      Colors.black87,
+                      color: Colors.black87,
                     ),
-                    SizedBox(
-                      width: 8,
-                    ),
+                    SizedBox(width: 8),
                     Text(
                       'Mais recentes',
-                      style:
-                      TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-
               DropdownMenuItem(
-                value:
-                'Mais antigas',
-
+                value: 'Mais antigas',
                 child: Row(
                   children: [
                     Icon(
                       Icons.sort,
                       size: 18,
-                      color:
-                      Colors.black87,
+                      color: Colors.black87,
                     ),
-                    SizedBox(
-                      width: 8,
-                    ),
+                    SizedBox(width: 8),
                     Text(
                       'Mais antigas',
-                      style:
-                      TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-
               DropdownMenuItem(
-                value:
-                'Título A–Z',
-
+                value: 'Título A–Z',
                 child: Row(
                   children: [
                     Icon(
                       Icons
                           .sort_by_alpha,
                       size: 18,
-                      color:
-                      Colors.black87,
+                      color: Colors.black87,
                     ),
-                    SizedBox(
-                      width: 8,
-                    ),
+                    SizedBox(width: 8),
                     Text(
                       'Título A–Z',
-                      style:
-                      TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                       ),
                     ),
@@ -1045,7 +851,6 @@ class _AcervoResultadosPageState
                 ),
               ),
             ],
-
             onChanged: (valor) {
               if (valor == null) {
                 return;
@@ -1066,45 +871,27 @@ class _AcervoResultadosPageState
   // ==========================================================
   // BOTÃO DE PESQUISA
   // ==========================================================
-
-  Widget
-  _construirBotaoPesquisa() {
+  Widget _construirBotaoPesquisa() {
     return SizedBox(
       width: 48,
       height: 48,
-
       child: Material(
         color:
-        const Color(
-          0xFFE9EAEC,
-        ),
-
+        const Color(0xFFE9EAEC),
         borderRadius:
-        BorderRadius.circular(
-          4,
-        ),
-
+        BorderRadius.circular(4),
         child: InkWell(
-          onTap:
-          _abrirPesquisa,
-
+          onTap: _abrirPesquisa,
           borderRadius:
-          BorderRadius.circular(
-            4,
-          ),
-
-          child:
-          const SizedBox(
+          BorderRadius.circular(4),
+          child: const SizedBox(
             width: 48,
             height: 48,
-
             child: Center(
-              child:
-              Icon(
+              child: Icon(
                 Icons.search,
                 size: 22,
-                color:
-                Colors.black87,
+                color: Colors.black87,
               ),
             ),
           ),
@@ -1116,66 +903,41 @@ class _AcervoResultadosPageState
   // ==========================================================
   // BOTÃO MAIS FILTROS
   // ==========================================================
-
-  Widget
-  _construirBotaoMaisFiltros() {
+  Widget _construirBotaoMaisFiltros() {
     return SizedBox(
       height: 48,
-
       child: Material(
         color:
-        const Color(
-          0xFFE9EAEC,
-        ),
-
+        const Color(0xFFE9EAEC),
         borderRadius:
-        BorderRadius.circular(
-          4,
-        ),
-
+        BorderRadius.circular(4),
         child: InkWell(
-          onTap:
-          _abrirMaisFiltros,
-
+          onTap: _abrirMaisFiltros,
           borderRadius:
-          BorderRadius.circular(
-            4,
-          ),
-
-          child:
-          const SizedBox(
+          BorderRadius.circular(4),
+          child: const SizedBox(
             height: 48,
-
             child: Padding(
               padding:
               EdgeInsets.symmetric(
                 horizontal: 14,
               ),
-
               child: Row(
                 mainAxisSize:
                 MainAxisSize.min,
-
                 mainAxisAlignment:
                 MainAxisAlignment
                     .center,
-
                 children: [
                   Icon(
                     Icons.tune,
                     size: 18,
-                    color:
-                    Colors.black87,
+                    color: Colors.black87,
                   ),
-
-                  SizedBox(
-                    width: 8,
-                  ),
-
+                  SizedBox(width: 8),
                   Text(
                     'Mais filtros',
-                    style:
-                    TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color:
                       Colors.black87,
@@ -1183,11 +945,7 @@ class _AcervoResultadosPageState
                       FontWeight.w500,
                     ),
                   ),
-
-                  SizedBox(
-                    width: 5,
-                  ),
-
+                  SizedBox(width: 5),
                   Icon(
                     Icons
                         .keyboard_arrow_down,
@@ -1207,66 +965,41 @@ class _AcervoResultadosPageState
   // ==========================================================
   // BOTÃO LIMPAR FILTROS
   // ==========================================================
-
-  Widget
-  _construirBotaoLimparFiltros() {
+  Widget _construirBotaoLimparFiltros() {
     return SizedBox(
       height: 48,
-
       child: Material(
         color:
-        const Color(
-          0xFFE9EAEC,
-        ),
-
+        const Color(0xFFE9EAEC),
         borderRadius:
-        BorderRadius.circular(
-          4,
-        ),
-
+        BorderRadius.circular(4),
         child: InkWell(
-          onTap:
-          _limparFiltros,
-
+          onTap: _limparFiltros,
           borderRadius:
-          BorderRadius.circular(
-            4,
-          ),
-
-          child:
-          const SizedBox(
+          BorderRadius.circular(4),
+          child: const SizedBox(
             height: 48,
-
             child: Padding(
               padding:
               EdgeInsets.symmetric(
                 horizontal: 14,
               ),
-
               child: Row(
                 mainAxisSize:
                 MainAxisSize.min,
-
                 mainAxisAlignment:
                 MainAxisAlignment
                     .center,
-
                 children: [
                   Icon(
                     Icons.clear,
                     size: 17,
-                    color:
-                    Colors.black87,
+                    color: Colors.black87,
                   ),
-
-                  SizedBox(
-                    width: 7,
-                  ),
-
+                  SizedBox(width: 7),
                   Text(
                     'Limpar filtros',
-                    style:
-                    TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       color:
                       Colors.black87,
@@ -1284,49 +1017,36 @@ class _AcervoResultadosPageState
   // ==========================================================
   // MAIS FILTROS
   // ==========================================================
-
-  Future<void>
-  _abrirMaisFiltros() async {
+  Future<void> _abrirMaisFiltros() async {
     _autorController.text =
         _autorPesquisa;
 
     await showDialog(
       context: context,
-
-      builder:
-          (dialogContext) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor:
           Colors.white,
-
-          title:
-          const Text(
+          title: const Text(
             'Mais filtros',
-            style:
-            TextStyle(
+            style: TextStyle(
               fontSize: 19,
               fontWeight:
               FontWeight.w600,
             ),
           ),
-
-          content:
-          SizedBox(
+          content: SizedBox(
             width: 430,
-
             child: Column(
               mainAxisSize:
               MainAxisSize.min,
-
               crossAxisAlignment:
               CrossAxisAlignment
                   .start,
-
               children: [
                 const Text(
                   'Autor',
-                  style:
-                  TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight:
                     FontWeight.w600,
@@ -1334,79 +1054,60 @@ class _AcervoResultadosPageState
                     Colors.black87,
                   ),
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-
                 TextField(
                   controller:
                   _autorController,
-
                   autofocus: true,
-
                   textInputAction:
-                  TextInputAction
-                      .done,
-
+                  TextInputAction.done,
                   decoration:
                   InputDecoration(
                     hintText:
                     'Nome do autor',
-
                     prefixIcon:
                     const Icon(
                       Icons
                           .person_outline,
                       size: 19,
                     ),
-
                     suffixIcon:
                     IconButton(
                       tooltip:
                       'Limpar',
-
                       icon:
                       const Icon(
                         Icons.clear,
                         size: 18,
                       ),
-
                       onPressed: () {
                         _autorController
                             .clear();
                       },
                     ),
-
                     filled: true,
-
                     fillColor:
                     const Color(
                       0xFFF1F2F4,
                     ),
-
                     border:
                     const OutlineInputBorder(
                       borderSide:
-                      BorderSide
-                          .none,
+                      BorderSide.none,
                     ),
-
                     isDense: true,
                   ),
                 ),
-
                 const SizedBox(
                   height: 8,
                 ),
-
                 const Text(
                   'Use este filtro quando quiser '
                       'procurar especificamente obras '
                       'de um determinado autor.',
-
-                  style:
-                  TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     color:
                     Colors.black54,
@@ -1416,7 +1117,6 @@ class _AcervoResultadosPageState
               ],
             ),
           ),
-
           actions: [
             TextButton(
               onPressed: () {
@@ -1424,19 +1124,16 @@ class _AcervoResultadosPageState
                   dialogContext,
                 ).pop();
               },
-
               child:
               const Text(
                 'Cancelar',
               ),
             ),
-
             OutlinedButton(
               onPressed: () {
                 setState(() {
                   _autorPesquisa =
                   '';
-
                   _autorController
                       .clear();
                 });
@@ -1447,19 +1144,15 @@ class _AcervoResultadosPageState
 
                 _aplicarFiltro();
               },
-
               style:
-              OutlinedButton
-                  .styleFrom(
+              OutlinedButton.styleFrom(
                 foregroundColor:
                 Colors.black87,
-
                 side:
                 const BorderSide(
                   color:
                   Colors.black12,
                 ),
-
                 shape:
                 RoundedRectangleBorder(
                   borderRadius:
@@ -1468,13 +1161,11 @@ class _AcervoResultadosPageState
                   ),
                 ),
               ),
-
               child:
               const Text(
                 'Limpar',
               ),
             ),
-
             ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -1490,18 +1181,13 @@ class _AcervoResultadosPageState
 
                 _aplicarFiltro();
               },
-
               style:
-              ElevatedButton
-                  .styleFrom(
+              ElevatedButton.styleFrom(
                 backgroundColor:
                 Colors.black87,
-
                 foregroundColor:
                 Colors.white,
-
                 elevation: 0,
-
                 shape:
                 RoundedRectangleBorder(
                   borderRadius:
@@ -1510,7 +1196,6 @@ class _AcervoResultadosPageState
                   ),
                 ),
               ),
-
               child:
               const Text(
                 'Aplicar filtros',
@@ -1525,22 +1210,15 @@ class _AcervoResultadosPageState
   // ==========================================================
   // FILTROS HORIZONTAIS
   // ==========================================================
-
-  Widget
-  _construirFiltrosHorizontais() {
+  Widget _construirFiltrosHorizontais() {
     return Container(
       width: double.infinity,
-
       padding:
-      const EdgeInsets.all(
-        10,
-      ),
-
+      const EdgeInsets.all(10),
       decoration:
       const BoxDecoration(
         color:
         Color(0xFFF0F1F3),
-
         borderRadius:
         BorderRadius.only(
           bottomLeft:
@@ -1549,45 +1227,32 @@ class _AcervoResultadosPageState
           Radius.circular(6),
         ),
       ),
-
       child:
       SingleChildScrollView(
         scrollDirection:
         Axis.horizontal,
-
         child: Row(
           mainAxisSize:
           MainAxisSize.min,
-
           crossAxisAlignment:
-          CrossAxisAlignment
-              .center,
-
+          CrossAxisAlignment.center,
           children: [
             _construirBotaoPesquisa(),
-
             const SizedBox(
               width: 10,
             ),
-
             _construirFiltroAno(),
-
             const SizedBox(
               width: 10,
             ),
-
             _construirFiltroOrdenacao(),
-
             const SizedBox(
               width: 10,
             ),
-
             _construirBotaoMaisFiltros(),
-
             const SizedBox(
               width: 10,
             ),
-
             _construirBotaoLimparFiltros(),
           ],
         ),
@@ -1598,7 +1263,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // APLICAR FILTRO
   // ==========================================================
-
   void _aplicarFiltro() {
     _carregarResultados(
       primeiraPagina: true,
@@ -1608,7 +1272,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // LIMPAR FILTROS
   // ==========================================================
-
   void _limparFiltros() {
     setState(() {
       _categoriaSelecionada =
@@ -1624,8 +1287,7 @@ class _AcervoResultadosPageState
 
       _autorPesquisa = '';
 
-      _pesquisaController
-          .clear();
+      _pesquisaController.clear();
 
       _autorController.clear();
 
@@ -1635,8 +1297,7 @@ class _AcervoResultadosPageState
 
       _paginaAtual = 1;
 
-      _pesquisaRealizada =
-      false;
+      _pesquisaRealizada = false;
 
       _carregando = false;
     });
@@ -1645,7 +1306,6 @@ class _AcervoResultadosPageState
   // ==========================================================
   // CONTEÚDO
   // ==========================================================
-
   Widget _construirConteudo() {
     if (!_pesquisaRealizada) {
       return _construirEstadoInicial();
@@ -1656,7 +1316,6 @@ class _AcervoResultadosPageState
         child: Padding(
           padding:
           EdgeInsets.all(60),
-
           child:
           CircularProgressIndicator(),
         ),
@@ -1680,18 +1339,13 @@ class _AcervoResultadosPageState
     return Column(
       crossAxisAlignment:
       CrossAxisAlignment.start,
-
       children: [
         Text(
           titulo,
-
           maxLines: 2,
-
           overflow:
           TextOverflow.ellipsis,
-
-          style:
-          const TextStyle(
+          style: const TextStyle(
             fontSize: 23,
             fontWeight:
             FontWeight.bold,
@@ -1699,29 +1353,27 @@ class _AcervoResultadosPageState
             Colors.black87,
           ),
         ),
-
         const SizedBox(
           height: 5,
         ),
-
         Text(
           _consultaAtual.isEmpty
               ? '${_obras.length} obra(s) encontrada(s)'
               : '${_obras.length} obra(s) encontrada(s) '
               'para "$_consultaAtual"',
-
-          style:
-          const TextStyle(
+          style: const TextStyle(
             fontSize: 13,
             color:
             Colors.black54,
           ),
         ),
-
         const SizedBox(
           height: 22,
         ),
 
+        // ======================================================
+        // O CARTÃO USA obra.id E ABRE /obra/:id
+        // ======================================================
         ..._obrasDaPagina.map(
           _construirObra,
         ),
@@ -1732,15 +1384,12 @@ class _AcervoResultadosPageState
             const EdgeInsets.only(
               top: 4,
             ),
-
             child:
             PaginacaoGoogleWidget(
               paginaAtual:
               _paginaAtual,
-
               totalPaginas:
               _totalPaginas,
-
               onPaginaAlterada:
               _alterarPagina,
             ),
@@ -1752,17 +1401,13 @@ class _AcervoResultadosPageState
   // ==========================================================
   // ESTADO INICIAL
   // ==========================================================
-
-  Widget
-  _construirEstadoInicial() {
+  Widget _construirEstadoInicial() {
     return Center(
       child: Padding(
         padding:
-        const EdgeInsets
-            .symmetric(
+        const EdgeInsets.symmetric(
           vertical: 70,
         ),
-
         child: Column(
           children: [
             Icon(
@@ -1772,38 +1417,28 @@ class _AcervoResultadosPageState
               color:
               Colors.grey.shade400,
             ),
-
             const SizedBox(
               height: 18,
             ),
-
             const Text(
               'Explore o Acervo',
-
               textAlign:
               TextAlign.center,
-
-              style:
-              TextStyle(
+              style: TextStyle(
                 fontSize: 21,
                 fontWeight:
                 FontWeight.w500,
               ),
             ),
-
             const SizedBox(
               height: 8,
             ),
-
             const Text(
               'Pesquise por títulos, autores, '
                   'temas ou categorias.',
-
               textAlign:
               TextAlign.center,
-
-              style:
-              TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color:
                 Colors.black54,
@@ -1818,16 +1453,13 @@ class _AcervoResultadosPageState
   // ==========================================================
   // VAZIO
   // ==========================================================
-
   Widget _construirVazio() {
     return Center(
       child: Padding(
         padding:
-        const EdgeInsets
-            .symmetric(
+        const EdgeInsets.symmetric(
           vertical: 60,
         ),
-
         child: Column(
           children: [
             Icon(
@@ -1837,38 +1469,28 @@ class _AcervoResultadosPageState
               color:
               Colors.grey.shade400,
             ),
-
             const SizedBox(
               height: 18,
             ),
-
             const Text(
               'Nenhuma obra encontrada',
-
               textAlign:
               TextAlign.center,
-
-              style:
-              TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight:
                 FontWeight.bold,
               ),
             ),
-
             const SizedBox(
               height: 8,
             ),
-
             const Text(
               'Experimente alterar a pesquisa '
                   'ou os filtros.',
-
               textAlign:
               TextAlign.center,
-
-              style:
-              TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 color:
                 Colors.black54,
@@ -1883,16 +1505,13 @@ class _AcervoResultadosPageState
   // ==========================================================
   // ERRO
   // ==========================================================
-
   Widget _construirErro() {
     return Center(
       child: Padding(
         padding:
-        const EdgeInsets
-            .symmetric(
+        const EdgeInsets.symmetric(
           vertical: 60,
         ),
-
         child: Column(
           children: [
             Icon(
@@ -1902,62 +1521,48 @@ class _AcervoResultadosPageState
               color:
               Colors.grey.shade400,
             ),
-
             const SizedBox(
               height: 18,
             ),
-
             const Text(
               'Não foi possível carregar o acervo',
-
               textAlign:
               TextAlign.center,
-
-              style:
-              TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight:
                 FontWeight.bold,
               ),
             ),
-
             const SizedBox(
               height: 10,
             ),
-
             Padding(
               padding:
               const EdgeInsets
                   .symmetric(
                 horizontal: 24,
               ),
-
               child: Text(
                 _erro ?? '',
-
                 textAlign:
                 TextAlign.center,
-
-                style:
-                const TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   color:
                   Colors.black54,
                 ),
               ),
             ),
-
             const SizedBox(
               height: 18,
             ),
-
             OutlinedButton(
               onPressed: () {
                 _carregarResultados(
                   primeiraPagina: true,
                 );
               },
-
               child:
               const Text(
                 'Tentar novamente',
@@ -1972,46 +1577,31 @@ class _AcervoResultadosPageState
   // ==========================================================
   // BUILD
   // ==========================================================
-
   @override
   Widget build(
       BuildContext context,
       ) {
     return Scaffold(
       backgroundColor:
-      const Color(
-        0xFFF7F8FA,
-      ),
-
+      const Color(0xFFF7F8FA),
       appBar: AppBar(
-        title:
-        const Text(
+        title: const Text(
           'Acervo',
-
-          style:
-          TextStyle(
+          style: TextStyle(
             fontWeight:
             FontWeight.bold,
           ),
         ),
-
         elevation: 0,
-
         backgroundColor:
         Colors.white,
-
         foregroundColor:
         Colors.black87,
-
         actions: const [
-          SizedBox(
-            width: 8,
-          ),
+          SizedBox(width: 8),
         ],
       ),
-
-      body:
-      RefreshIndicator(
+      body: RefreshIndicator(
         onRefresh: () {
           if (!_pesquisaRealizada) {
             return Future.value();
@@ -2021,20 +1611,16 @@ class _AcervoResultadosPageState
             primeiraPagina: true,
           );
         },
-
         child:
         SingleChildScrollView(
           physics:
           const AlwaysScrollableScrollPhysics(),
-
           child: Center(
-            child:
-            ConstrainedBox(
+            child: ConstrainedBox(
               constraints:
               const BoxConstraints(
                 maxWidth: 1080,
               ),
-
               child: Padding(
                 padding:
                 const EdgeInsets
@@ -2042,17 +1628,14 @@ class _AcervoResultadosPageState
                   horizontal: 24,
                   vertical: 32,
                 ),
-
                 child: Column(
                   crossAxisAlignment:
                   CrossAxisAlignment
                       .start,
-
                   children: [
                     // ==========================================
                     // CATEGORIA
                     // ==========================================
-
                     _construirFiltroCategoria(),
 
                     const SizedBox(
@@ -2062,7 +1645,6 @@ class _AcervoResultadosPageState
                     // ==========================================
                     // PAINEL DOS FILTROS
                     // ==========================================
-
                     _construirFiltrosHorizontais(),
 
                     const SizedBox(
@@ -2072,7 +1654,6 @@ class _AcervoResultadosPageState
                     // ==========================================
                     // RESULTADOS
                     // ==========================================
-
                     _construirConteudo(),
                   ],
                 ),
@@ -2084,6 +1665,3 @@ class _AcervoResultadosPageState
     );
   }
 }
-
-
-

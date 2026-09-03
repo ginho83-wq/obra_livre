@@ -13,10 +13,9 @@ import '../widgets/web_ad_sense_widget.dart';
 // ==========================================================
 // HOME PAGE
 // ==========================================================
+
 class HomePage extends StatefulWidget {
-  const HomePage({
-    super.key,
-  });
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -25,9 +24,9 @@ class HomePage extends StatefulWidget {
 // ==========================================================
 // STATE
 // ==========================================================
+
 class _HomePageState extends State<HomePage> {
-  final SupabaseClient _supabase =
-      Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   StreamSubscription<AuthState>? _authSubscription;
 
@@ -38,8 +37,18 @@ class _HomePageState extends State<HomePage> {
   String? _nomeUsuario;
 
   // ==========================================================
+  // CONFIGURAÇÃO VISUAL
+  // ==========================================================
+
+  static const double _larguraMaxima = 1080;
+
+  // Margem horizontal única para toda a Home.
+  static const double _margemHorizontal = 60;
+
+  // ==========================================================
   // INIT
   // ==========================================================
+
   @override
   void initState() {
     super.initState();
@@ -47,16 +56,15 @@ class _HomePageState extends State<HomePage> {
     _verificarUsuario();
 
     _authSubscription =
-        _supabase.auth.onAuthStateChange.listen(
-              (_) {
-            _verificarUsuario();
-          },
-        );
+        _supabase.auth.onAuthStateChange.listen((_) {
+          _verificarUsuario();
+        });
   }
 
   // ==========================================================
   // DISPOSE
   // ==========================================================
+
   @override
   void dispose() {
     _authSubscription?.cancel();
@@ -66,13 +74,11 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // VERIFICAR UTILIZADOR
   // ==========================================================
+
   Future<void> _verificarUsuario() async {
     try {
       final usuario = _supabase.auth.currentUser;
 
-      // ------------------------------------------------------
-      // UTILIZADOR NÃO AUTENTICADO
-      // ------------------------------------------------------
       if (usuario == null) {
         if (!mounted) return;
 
@@ -86,18 +92,11 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      // ------------------------------------------------------
-      // OBTER PERFIL
-      // ------------------------------------------------------
       final perfil = await AuthService.obterPerfil();
 
       if (!mounted) return;
 
-      // ------------------------------------------------------
-      // CONFIRMAR QUE O UTILIZADOR CONTINUA AUTENTICADO
-      // ------------------------------------------------------
-      final usuarioAtual =
-          _supabase.auth.currentUser;
+      final usuarioAtual = _supabase.auth.currentUser;
 
       if (usuarioAtual == null ||
           usuarioAtual.id != usuario.id) {
@@ -111,9 +110,6 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      // ------------------------------------------------------
-      // VERIFICAR ROLE
-      // ------------------------------------------------------
       final role = perfil?['role']
           ?.toString()
           .trim()
@@ -121,9 +117,6 @@ class _HomePageState extends State<HomePage> {
 
       final administrador = role == 'admin';
 
-      // ------------------------------------------------------
-      // OBTER NOME DO UTILIZADOR NORMAL
-      // ------------------------------------------------------
       String? nome;
 
       if (!administrador) {
@@ -136,14 +129,10 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
-      // ------------------------------------------------------
-      // ATUALIZAR ESTADO
-      // ------------------------------------------------------
       setState(() {
         _usuarioAutenticado = true;
         _isAdministrador = administrador;
-        _nomeUsuario =
-        administrador ? null : nome;
+        _nomeUsuario = administrador ? null : nome;
         _carregando = false;
       });
     } catch (e) {
@@ -163,36 +152,53 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // ABRIR ACERVO
+  // NAVEGAÇÃO
   // ==========================================================
+
   void _abrirAcervo() {
     context.push('/acervo');
   }
 
-  // ==========================================================
-  // LOGIN
-  // ==========================================================
   void _abrirLogin() {
     context.go('/login');
   }
 
-  // ==========================================================
-  // MINHA CONTA
-  // ==========================================================
   void _abrirMinhaConta() {
     context.push('/minha-conta');
   }
 
-  // ==========================================================
-  // ADMINISTRAÇÃO
-  // ==========================================================
   void _abrirAdministracao() {
     context.push('/admin-obras');
   }
 
   // ==========================================================
+  // CONTAINER PADRÃO
+  // ==========================================================
+
+  Widget _containerPrincipal({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+  }) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: _larguraMaxima,
+        ),
+        child: Padding(
+          padding: padding ??
+              const EdgeInsets.symmetric(
+                horizontal: _margemHorizontal,
+              ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
   // CABEÇALHO
   // ==========================================================
+
   Widget _construirCabecalho() {
     final theme = Theme.of(context);
 
@@ -202,63 +208,85 @@ class _HomePageState extends State<HomePage> {
         color: theme.scaffoldBackgroundColor,
         border: Border(
           bottom: BorderSide(
-            color: theme.dividerColor
-                .withValues(alpha: 0.10),
-            width: 1,
+            color: theme.dividerColor.withValues(
+              alpha: 0.10,
+            ),
           ),
         ),
       ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 1080,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 6,
-            ),
-            child: Row(
-              children: [
+      child: _containerPrincipal(
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              // ==================================================
+              // LOGOTIPO
+              // ==================================================
 
-                // ==================================================
-                // LOGOTIPO
-                // ==================================================
-                InkWell(
-                  borderRadius:
-                  BorderRadius.circular(8),
-                  onTap: () {
-                    context.go('/');
-                  },
-                  child: const Padding(
-                    padding:
-                    EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 10,
-                    ),
-                    child: Text(
-                      'Obra Livre',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                        FontWeight.w600,
-                        letterSpacing: -0.4,
-                      ),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () {
+                  context.go('/');
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 0,
+                    vertical: 10,
+                  ),
+                  child: Text(
+                    'Obra Livre',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ),
+              ),
 
-                const Spacer(),
+              const Spacer(),
 
-                // ==================================================
-                // ACERVO
-                // ==================================================
+              // ==================================================
+              // ACERVO
+              // ==================================================
+
+              TextButton(
+                onPressed: _abrirAcervo,
+                style: TextButton.styleFrom(
+                  foregroundColor:
+                  theme.colorScheme.onSurface,
+                  padding:
+                  const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                ),
+                child: const Text(
+                  'Acervo',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 2),
+
+              // ==================================================
+              // AUTENTICAÇÃO
+              // ==================================================
+
+              if (_carregando)
+                const SizedBox(
+                  width: 120,
+                  height: 40,
+                )
+              else if (!_usuarioAutenticado)
                 TextButton(
-                  onPressed: _abrirAcervo,
+                  onPressed: _abrirLogin,
                   style: TextButton.styleFrom(
                     foregroundColor:
-                    theme.colorScheme
-                        .onSurface,
+                    theme.colorScheme.onSurface,
                     padding:
                     const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -266,133 +294,65 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   child: const Text(
-                    'Acervo',
+                    'Entrar',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight:
-                      FontWeight.w500,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-
-                const SizedBox(width: 2),
-
-                // ==================================================
-                // ÁREA DE AUTENTICAÇÃO
-                // ==================================================
-                //
-                // IMPORTANTE:
-                // Não mostramos CircularProgressIndicator
-                // enquanto o perfil está a ser consultado.
-                //
-                // O espaço permanece reservado e, quando a
-                // verificação termina, aparece diretamente:
-                //
-                // Administração
-                //
-                // ou:
-                //
-                // Entrar
-                //
-                // ou:
-                //
-                // Minha Conta
-                // ==================================================
-                if (_carregando)
-
-                  const SizedBox(
-                    width: 120,
-                    height: 40,
-                  )
-
-                else if (!_usuarioAutenticado)
-
+                )
+              else if (_isAdministrador)
                   TextButton(
-                    onPressed: _abrirLogin,
-                    style:
-                    TextButton.styleFrom(
+                    onPressed: _abrirAdministracao,
+                    style: TextButton.styleFrom(
                       foregroundColor:
-                      theme.colorScheme
-                          .onSurface,
+                      theme.colorScheme.onSurface,
                       padding:
-                      const EdgeInsets
-                          .symmetric(
+                      const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 10,
                       ),
                     ),
                     child: const Text(
-                      'Entrar',
+                      'Administração',
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight:
-                        FontWeight.w500,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   )
-
-                else if (_isAdministrador)
-
-                    TextButton(
-                      onPressed:
-                      _abrirAdministracao,
-                      style:
-                      TextButton.styleFrom(
-                        foregroundColor:
-                        theme.colorScheme
-                            .onSurface,
-                        padding:
-                        const EdgeInsets
-                            .symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
+                else
+                  TextButton(
+                    onPressed: _abrirMinhaConta,
+                    style: TextButton.styleFrom(
+                      foregroundColor:
+                      theme.colorScheme.onSurface,
+                      padding:
+                      const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
                       ),
-                      child: const Text(
-                        'Administração',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight:
-                          FontWeight.w500,
-                        ),
-                      ),
-                    )
-
-                  else
-
-                    TextButton(
-                      onPressed:
-                      _abrirMinhaConta,
-                      style:
-                      TextButton.styleFrom(
-                        foregroundColor:
-                        theme.colorScheme
-                            .onSurface,
-                        padding:
-                        const EdgeInsets
-                            .symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
+                    ),
+                    child: ConstrainedBox(
+                      constraints:
+                      const BoxConstraints(
+                        maxWidth: 150,
                       ),
                       child: Text(
                         _nomeUsuario != null &&
-                            _nomeUsuario!
-                                .isNotEmpty
+                            _nomeUsuario!.isNotEmpty
                             ? _nomeUsuario!
                             : 'Minha Conta',
                         overflow:
                         TextOverflow.ellipsis,
-                        style:
-                        const TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
-                          fontWeight:
-                          FontWeight.w500,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-              ],
-            ),
+                  ),
+            ],
           ),
         ),
       ),
@@ -402,54 +362,48 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // ÁREA DE PESQUISA
   // ==========================================================
+
   Widget _construirAreaPesquisa() {
     final theme = Theme.of(context);
 
-    return Center(
+    return _containerPrincipal(
       child: ConstrainedBox(
         constraints: const BoxConstraints(
           maxWidth: 720,
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-          ),
-          child: Column(
-            children: [
-              Text(
-                'Encontre conhecimento. Encontre obras.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme
-                    .headlineSmall
-                    ?.copyWith(
-                  fontSize: 27,
-                  fontWeight:
-                  FontWeight.w600,
-                  letterSpacing: -0.6,
-                  height: 1.2,
-                ),
+        child: Column(
+          children: [
+            Text(
+              'Encontre conhecimento. Encontre obras.',
+              textAlign: TextAlign.center,
+              style:
+              theme.textTheme.headlineSmall?.copyWith(
+                fontSize: 27,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.6,
+                height: 1.2,
               ),
-              const SizedBox(height: 11),
-              Text(
-                'Pesquise teses, dissertações, artigos e outras obras académicas.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme
-                    .bodyMedium
-                    ?.copyWith(
-                  fontSize: 14,
-                  height: 1.55,
-                  color: theme.textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withValues(
-                    alpha: 0.64,
-                  ),
-                ),
+            ),
+
+            const SizedBox(height: 11),
+
+            Text(
+              'Pesquise teses, dissertações, artigos e outras obras académicas.',
+              textAlign: TextAlign.center,
+              style:
+              theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 14,
+                height: 1.55,
+                color:
+                theme.textTheme.bodyMedium?.color
+                    ?.withValues(alpha: 0.64),
               ),
-              const SizedBox(height: 24),
-              const SearchBarWidget(),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 24),
+
+            const SearchBarWidget(),
+          ],
         ),
       ),
     );
@@ -458,54 +412,33 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // CATEGORIAS
   // ==========================================================
+
   Widget _construirCategorias() {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 1080,
-        ),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 24,
-          ),
-          child:
-          CategoriesHorizontalWidget(),
-        ),
-      ),
+    return _containerPrincipal(
+      child: const CategoriesHorizontalWidget(),
     );
   }
 
   // ==========================================================
   // PUBLICIDADE
   // ==========================================================
-  Widget _construirPublicidade() {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 1080,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
-          ),
-          child: LayoutBuilder(
-            builder:
-                (context, constraints) {
-              final isMobile =
-                  constraints.maxWidth < 600;
 
-              return Align(
-                alignment: isMobile
-                    ? Alignment.center
-                    : Alignment.topRight,
-                child:
-                const WebAdSenseWidget(
-                  adSize: 'small',
-                ),
-              );
-            },
-          ),
-        ),
+  Widget _construirPublicidade() {
+    return _containerPrincipal(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile =
+              constraints.maxWidth < 600;
+
+          return Align(
+            alignment: isMobile
+                ? Alignment.center
+                : Alignment.topRight,
+            child: const WebAdSenseWidget(
+              adSize: 'small',
+            ),
+          );
+        },
       ),
     );
   }
@@ -513,56 +446,46 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // OBRAS RECENTES
   // ==========================================================
+
   Widget _construirSecaoObras() {
     final theme = Theme.of(context);
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 1080,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 24,
+    return _containerPrincipal(
+      // Usa exatamente os mesmos 60 px das restantes seções.
+      child: Column(
+        crossAxisAlignment:
+        CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Obras recentes',
+            style:
+            theme.textTheme.titleLarge?.copyWith(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.25,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment:
-            CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Obras recentes',
-                style: theme.textTheme
-                    .titleLarge
-                    ?.copyWith(
-                  fontSize: 20,
-                  fontWeight:
-                  FontWeight.w600,
-                  letterSpacing: -0.25,
-                ),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                'Últimas obras publicadas na plataforma',
-                style: theme.textTheme
-                    .bodySmall
-                    ?.copyWith(
-                  fontSize: 13,
-                  height: 1.4,
-                  color: theme.textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(
-                    alpha: 0.62,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const ObrasRecentesWidget(
-                quantidade: 10,
-              ),
-            ],
+
+          const SizedBox(height: 5),
+
+          Text(
+            'Últimas obras publicadas na plataforma',
+            style:
+            theme.textTheme.bodySmall?.copyWith(
+              fontSize: 13,
+              height: 1.4,
+              color:
+              theme.textTheme.bodySmall?.color
+                  ?.withValues(alpha: 0.62),
+            ),
           ),
-        ),
+
+          const SizedBox(height: 18),
+
+          const ObrasRecentesWidget(
+            quantidade: 10,
+          ),
+        ],
       ),
     );
   }
@@ -570,65 +493,54 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // RODAPÉ
   // ==========================================================
+
   Widget _construirRodape() {
     final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
-      margin:
-      const EdgeInsets.only(top: 58),
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 24,
+      margin: const EdgeInsets.only(
+        top: 58,
+      ),
+      padding: const EdgeInsets.symmetric(
         vertical: 24,
       ),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: theme.dividerColor
-                .withValues(alpha: 0.10),
-            width: 1,
+            color: theme.dividerColor.withValues(
+              alpha: 0.10,
+            ),
           ),
         ),
       ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 1080,
-          ),
-          child: Row(
-            children: [
-              Text(
-                '© ${DateTime.now().year} Obra Livre',
-                style: theme.textTheme
-                    .bodySmall
-                    ?.copyWith(
-                  fontSize: 12,
-                  color: theme.textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(
-                    alpha: 0.58,
-                  ),
-                ),
+      child: _containerPrincipal(
+        child: Row(
+          children: [
+            Text(
+              '© ${DateTime.now().year} Obra Livre',
+              style:
+              theme.textTheme.bodySmall?.copyWith(
+                fontSize: 12,
+                color:
+                theme.textTheme.bodySmall?.color
+                    ?.withValues(alpha: 0.58),
               ),
-              const Spacer(),
-              Text(
-                'Acervo Digital',
-                style: theme.textTheme
-                    .bodySmall
-                    ?.copyWith(
-                  fontSize: 12,
-                  color: theme.textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(
-                    alpha: 0.58,
-                  ),
-                ),
+            ),
+
+            const Spacer(),
+
+            Text(
+              'Acervo Digital',
+              style:
+              theme.textTheme.bodySmall?.copyWith(
+                fontSize: 12,
+                color:
+                theme.textTheme.bodySmall?.color
+                    ?.withValues(alpha: 0.58),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -637,6 +549,7 @@ class _HomePageState extends State<HomePage> {
   // ==========================================================
   // BUILD
   // ==========================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

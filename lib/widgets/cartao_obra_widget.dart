@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../dados/obras_recentes.dart';
-import 'obra_detalhes_dialog.dart';
 
 class CartaoObraWidget extends StatelessWidget {
   final ObraRecente obra;
@@ -13,9 +13,33 @@ class CartaoObraWidget extends StatelessWidget {
   });
 
   // ==========================================================
+  // ABRIR PÁGINA INDIVIDUAL DA OBRA
+  // ==========================================================
+  void _abrirObra(BuildContext context) {
+    final id = obra.id.trim();
+
+    if (id.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não foi possível identificar esta obra.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Usa o ID real da obra.
+    // Exemplo:
+    // /obra/550e8400-e29b-41d4-a716-446655440000
+    final idCodificado = Uri.encodeComponent(id);
+
+    context.go('/obra/$idCodificado');
+  }
+
+  // ==========================================================
   // ABRIR PDF
   // ==========================================================
-
   Future<void> _abrirPdf(BuildContext context) async {
     if (obra.urlDocumento.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,35 +98,8 @@ class CartaoObraWidget extends StatelessWidget {
   }
 
   // ==========================================================
-  // MOSTRAR DETALHES DA OBRA
-  // ==========================================================
-
-  void _mostrarDetalhes(BuildContext context) {
-    if (obra.id.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Não foi possível identificar esta obra.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    showDialog<void>(
-      context: context,
-      builder: (_) {
-        return ObraDetalhesDialog(
-          id: obra.id,
-        );
-      },
-    );
-  }
-
-  // ==========================================================
   // FORMATAR DATA
   // ==========================================================
-
   String _formatarData(String data) {
     if (data.trim().isEmpty) {
       return '';
@@ -134,7 +131,6 @@ class CartaoObraWidget extends StatelessWidget {
   //
   // Autor principal + coautores
   // ==========================================================
-
   List<String> _obterAutores() {
     final nomes = <String>[];
 
@@ -149,8 +145,12 @@ class CartaoObraWidget extends StatelessWidget {
     if (coautores.isNotEmpty) {
       final listaCoautores = coautores
           .split(RegExp(r'\r?\n|;|,'))
-          .map((nome) => nome.trim())
-          .where((nome) => nome.isNotEmpty)
+          .map(
+            (nome) => nome.trim(),
+      )
+          .where(
+            (nome) => nome.isNotEmpty,
+      )
           .toList();
 
       nomes.addAll(listaCoautores);
@@ -174,7 +174,6 @@ class CartaoObraWidget extends StatelessWidget {
   // Mais de 3:
   // João Manuel, Maria José, Pedro António et al.
   // ==========================================================
-
   String _textoAutores() {
     final nomes = _obterAutores();
 
@@ -200,23 +199,14 @@ class CartaoObraWidget extends StatelessWidget {
   // ==========================================================
   // CONSTRUIR INFORMAÇÕES DA OBRA
   //
-  // ORDEM:
-  //
   // Autor, Coautores • Categoria • Ano • Publicado em data
-  //
-  // Exemplo:
-  //
-  // João Manuel, Maria José • Monografia • 2024 •
-  // Publicado em 15/08/2026
   // ==========================================================
-
   Widget _construirInformacoesObra() {
     final informacoes = <String>[];
 
     // ----------------------------------------------------------
     // AUTORES
     // ----------------------------------------------------------
-
     final textoAutores = _textoAutores();
 
     if (textoAutores.isNotEmpty) {
@@ -226,7 +216,6 @@ class CartaoObraWidget extends StatelessWidget {
     // ----------------------------------------------------------
     // CATEGORIA
     // ----------------------------------------------------------
-
     final categoria = obra.categoria.trim();
 
     if (categoria.isNotEmpty) {
@@ -236,7 +225,6 @@ class CartaoObraWidget extends StatelessWidget {
     // ----------------------------------------------------------
     // ANO DA OBRA
     // ----------------------------------------------------------
-
     final anoObra = obra.anoObra.toString().trim();
 
     if (anoObra.isNotEmpty &&
@@ -248,7 +236,6 @@ class CartaoObraWidget extends StatelessWidget {
     // ----------------------------------------------------------
     // DATA DE PUBLICAÇÃO
     // ----------------------------------------------------------
-
     final dataPublicacao =
     obra.dataPublicacao.trim();
 
@@ -266,7 +253,6 @@ class CartaoObraWidget extends StatelessWidget {
     // ----------------------------------------------------------
     // NENHUMA INFORMAÇÃO
     // ----------------------------------------------------------
-
     if (informacoes.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -275,7 +261,6 @@ class CartaoObraWidget extends StatelessWidget {
     // INFORMAÇÕES EM UMA ÚNICA LINHA
     // COM QUEBRA AUTOMÁTICA
     // ----------------------------------------------------------
-
     return Text(
       informacoes.join(' • '),
       maxLines: 2,
@@ -289,7 +274,6 @@ class CartaoObraWidget extends StatelessWidget {
   // ==========================================================
   // CARD PRINCIPAL
   // ==========================================================
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -303,14 +287,12 @@ class CartaoObraWidget extends StatelessWidget {
           crossAxisAlignment:
           CrossAxisAlignment.start,
           children: [
-
             // ==================================================
             // 1ª LINHA — TÍTULO
             // ==================================================
-
             InkWell(
               onTap: () {
-                _mostrarDetalhes(context);
+                _abrirObra(context);
               },
               borderRadius:
               BorderRadius.circular(4),
@@ -323,11 +305,9 @@ class CartaoObraWidget extends StatelessWidget {
                   crossAxisAlignment:
                   CrossAxisAlignment.start,
                   children: [
-
                     // ------------------------------------------------
                     // GLOBO
                     // ------------------------------------------------
-
                     const Padding(
                       padding: EdgeInsets.only(
                         top: 2,
@@ -342,15 +322,13 @@ class CartaoObraWidget extends StatelessWidget {
                     // ------------------------------------------------
                     // TÍTULO
                     // ------------------------------------------------
-
                     Expanded(
                       child: Text(
                         obra.titulo,
                         maxLines: 2,
                         overflow:
                         TextOverflow.ellipsis,
-                        style:
-                        const TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight:
                           FontWeight.w500,
@@ -370,7 +348,6 @@ class CartaoObraWidget extends StatelessWidget {
             // ==================================================
             // 2ª LINHA — DESCRIÇÃO
             // ==================================================
-
             if (obra.resumo.trim().isNotEmpty)
               Text(
                 obra.resumo,
@@ -390,7 +367,6 @@ class CartaoObraWidget extends StatelessWidget {
             //
             // AUTORES • CATEGORIA • ANO • DATA
             // ==================================================
-
             _construirInformacoesObra(),
           ],
         ),
@@ -398,5 +374,3 @@ class CartaoObraWidget extends StatelessWidget {
     );
   }
 }
-
-

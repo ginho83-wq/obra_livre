@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../repositorios/acervo_repository.dart';
+import '../services/seo_service.dart';
 
 class ObraDetalhesPage extends StatefulWidget {
   final String id;
@@ -12,25 +13,26 @@ class ObraDetalhesPage extends StatefulWidget {
   });
 
   @override
-  State<ObraDetalhesPage> createState() =>
-      _ObraDetalhesPageState();
+  State<ObraDetalhesPage> createState() => _ObraDetalhesPageState();
 }
 
 class _ObraDetalhesPageState extends State<ObraDetalhesPage> {
-  final AcervoRepository _repository =
-      AcervoRepository.instancia;
+  final AcervoRepository _repository = AcervoRepository.instancia;
 
   AcervoObra? _obra;
-
   bool _carregando = true;
-
   String? _erro;
 
   @override
   void initState() {
     super.initState();
-
     _carregarObra();
+  }
+
+  @override
+  void dispose() {
+    SeoService.limpar();
+    super.dispose();
   }
 
   // ==========================================================
@@ -46,14 +48,13 @@ class _ObraDetalhesPageState extends State<ObraDetalhesPage> {
     });
 
     try {
-      final obra =
-      await _repository.carregarObraPorId(
-        widget.id,
-      );
+      final obra = await _repository.carregarObraPorId(widget.id);
 
       if (!mounted) return;
 
       if (obra == null) {
+        SeoService.limpar();
+
         setState(() {
           _obra = null;
           _carregando = false;
@@ -67,31 +68,50 @@ class _ObraDetalhesPageState extends State<ObraDetalhesPage> {
         _obra = obra;
         _carregando = false;
       });
+
+      // ========================================================
+      // SEO DA OBRA INDIVIDUAL
+      // ========================================================
+
+      final url =
+          'https://ginho83-wq.github.io'
+          '/obra_livre/obra/${obra.id}/';
+
+      SeoService.definirObra(
+        titulo: obra.titulo,
+        descricao: obra.descricao,
+        autor: obra.autor,
+        categoria: obra.categoria,
+        ano: obra.anoObra,
+        url: url,
+      );
+
+      // ========================================================
+      // REGISTAR VISUALIZAÇÃO
+      // ========================================================
+
+      await _repository.registarVisualizacao(obra.id);
     } catch (e) {
       if (!mounted) return;
+
+      SeoService.limpar();
 
       setState(() {
         _obra = null;
         _carregando = false;
-        _erro =
-        'Não foi possível carregar a obra.';
+        _erro = 'Não foi possível carregar a obra.';
       });
     }
   }
 
   // ==========================================================
-  // ABRIR DOCUMENTO
+  // ABRIR DOCUMENTO PDF
   // ==========================================================
 
   Future<void> _abrirDocumento() async {
     final obra = _obra;
 
-    if (obra == null ||
-        obra.urlDocumento.trim().isEmpty) {
-      _mostrarMensagem(
-        'Documento não disponível.',
-      );
-
+    if (obra == null || obra.urlDocumento.trim().isEmpty) {
       return;
     }
 
@@ -100,69 +120,247 @@ class _ObraDetalhesPageState extends State<ObraDetalhesPage> {
     );
 
     if (uri == null) {
-      _mostrarMensagem(
-        'O endereço do documento é inválido.',
-      );
-
       return;
     }
 
-    try {
-      final abriu = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+    final sucesso = await launchUrl(
+      uri,
+      webOnlyWindowName: '_blank',
+    );
 
-      if (!abriu) {
-        _mostrarMensagem(
-          'Não foi possível abrir o documento.',
-        );
-      }
-    } catch (_) {
-      _mostrarMensagem(
-        'Não foi possível abrir o documento.',
+    if (!sucesso && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não foi possível abrir o documento.',
+          ),
+        ),
       );
     }
   }
 
   // ==========================================================
-  // MENSAGEM
+  // DESCRIÇÃO
   // ==========================================================
 
-  void _mostrarMensagem(String mensagem) {
-    if (!mounted) return;
+  String _descricao(String texto) {
+    final palavras = texto.trim().split(RegExp(r'\s+'));
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(mensagem),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    const limite = 80;
+
+    if (palavras.length <= limite) {
+      return texto.trim();
+    }
+
+    return '${palavras.take(limite).join(' ')}...';
   }
 
   // ==========================================================
   // FORMATAR DATA
   // ==========================================================
 
-  String _formatarData(DateTime? data) {
-    if (data == null) return '';
+  String _formatarData(DateTime data) {
+    final dia = data.day.toString().padLeft(2, '0');
+    final mes = data.month.toString().padLeft(2, '0');
+    final ano = data.year.toString();
 
-    final dia =
-    data.day.toString().padLeft(2, '0');
-
-    final mes =
-    data.month.toString().padLeft(2, '0');
-
-    return '$dia/$mes/${data.year}';
+    return '$dia/$mes/$ano';
   }
 
   // ==========================================================
-  // LINHA DE DETALHE
+  // BUILD
   // ==========================================================
 
-  Widget _linha(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Obra Livre'),
+      ),
+      body: _construirConteudo(),
+    );
+  }
+
+  // ==========================================================
+  // CONTEÚDO
+  // ==========================================================
+
+  Widget _construirConteudo() {
+    if (_carregando) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_erro != null || _obra == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.menu_book_outlined,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _erro ?? 'Obra não encontrada.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _carregarObra,
+                child: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final obra = _obra!;
+
+    return SelectionArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 900,
+            ),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ==================================================
+                    // TÍTULO
+                    // ==================================================
+
+                    Text(
+                      obra.titulo,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // ==================================================
+                    // AUTOR
+                    // ==================================================
+
+                    _campo(
+                      'Autor',
+                      obra.autor,
+                    ),
+
+                    // ==================================================
+                    // COAUTORES
+                    // ==================================================
+
+                    if (obra.coautores.trim().isNotEmpty)
+                      _campo(
+                        'Coautores',
+                        obra.coautores,
+                      ),
+
+                    // ==================================================
+                    // CATEGORIA
+                    // ==================================================
+
+                    _campo(
+                      'Categoria',
+                      obra.categoria,
+                    ),
+
+                    // ==================================================
+                    // ANO
+                    // ==================================================
+
+                    if (obra.anoObra != null)
+                      _campo(
+                        'Ano',
+                        obra.anoObra.toString(),
+                      ),
+
+                    // ==================================================
+                    // DATA DE PUBLICAÇÃO
+                    // ==================================================
+
+                    if (obra.dataPublicacao != null)
+                      _campo(
+                        'Data de publicação',
+                        _formatarData(
+                          obra.dataPublicacao!,
+                        ),
+                      ),
+
+                    const Divider(
+                      height: 32,
+                    ),
+
+                    // ==================================================
+                    // DESCRIÇÃO
+                    // ==================================================
+
+                    Text(
+                      'Descrição',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      _descricao(obra.descricao),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyLarge,
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ==================================================
+                    // BOTÃO ABRIR DOCUMENTO
+                    // ==================================================
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _abrirDocumento,
+                        icon: const Icon(
+                          Icons.open_in_new,
+                        ),
+                        label: const Text(
+                          'Abrir documento',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // CAMPO DE INFORMAÇÃO
+  // ==========================================================
+
+  Widget _campo(
       String titulo,
       String valor,
       ) {
@@ -172,280 +370,24 @@ class _ObraDetalhesPageState extends State<ObraDetalhesPage> {
 
     return Padding(
       padding: const EdgeInsets.only(
-        bottom: 15,
+        bottom: 12,
       ),
-      child: Column(
-        crossAxisAlignment:
-        CrossAxisAlignment.start,
-        children: [
-          Text(
-            titulo,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            valor,
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.45,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================================
-  // BUILD
-  // ==========================================================
-
-  @override
-  Widget build(BuildContext context) {
-    final obra = _obra;
-
-    return Scaffold(
-      backgroundColor:
-      const Color(0xFFF7F8FA),
-      appBar: AppBar(
-        title: const Text(
-          'Obra Livre',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-      ),
-      body: _carregando
-          ? const Center(
-        child: CircularProgressIndicator(),
-      )
-          : _erro != null || obra == null
-          ? Center(
-        child: Padding(
-          padding:
-          const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize:
-            MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.menu_book_outlined,
-                size: 54,
-                color: Colors.grey,
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              Text(
-                _erro ??
-                    'Obra não encontrada.',
-                textAlign:
-                TextAlign.center,
-                style:
-                const TextStyle(
-                  fontSize: 18,
-                  fontWeight:
-                  FontWeight.w600,
-                ),
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              OutlinedButton.icon(
-                onPressed:
-                _carregarObra,
-                icon: const Icon(
-                  Icons.refresh,
-                ),
-                label: const Text(
-                  'Tentar novamente',
-                ),
-              ),
-            ],
-          ),
-        ),
-      )
-          : SingleChildScrollView(
-        padding:
-        const EdgeInsets.symmetric(
-          horizontal: 24,
-          vertical: 32,
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints:
-            const BoxConstraints(
-              maxWidth: 850,
-            ),
-            child: Container(
-              padding:
-              const EdgeInsets.all(
-                28,
-              ),
-              decoration:
-              BoxDecoration(
-                color: Colors.white,
-                borderRadius:
-                BorderRadius.circular(
-                  14,
-                ),
-                border: Border.all(
-                  color: Colors.black12,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment
-                    .start,
-                children: [
-                  // ==================================================
-                  // TÍTULO
-                  // ==================================================
-
-                  Text(
-                    obra.titulo,
-                    style:
-                    const TextStyle(
-                      fontSize: 28,
-                      fontWeight:
-                      FontWeight.w700,
-                      height: 1.3,
-                      color:
-                      Colors.black87,
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 8,
-                  ),
-
-                  // ==================================================
-                  // CATEGORIA
-                  // ==================================================
-
-                  if (obra
-                      .categoria
-                      .isNotEmpty)
-                    Text(
-                      obra.categoria,
-                      style:
-                      const TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                        FontWeight.w600,
-                        color:
-                        Colors.blue,
-                      ),
-                    ),
-
-                  const SizedBox(
-                    height: 24,
-                  ),
-
-                  // ==================================================
-                  // AUTOR
-                  // ==================================================
-
-                  _linha(
-                    'Autor',
-                    obra.autor,
-                  ),
-
-                  // ==================================================
-                  // COAUTORES
-                  // ==================================================
-
-                  _linha(
-                    'Coautores',
-                    obra.coautores,
-                  ),
-
-                  // ==================================================
-                  // ANO DA OBRA
-                  // ==================================================
-
-                  if (obra.anoObra !=
-                      null)
-                    _linha(
-                      'Ano da obra',
-                      obra.anoObra
-                          .toString(),
-                    ),
-
-                  // ==================================================
-                  // DATA DE PUBLICAÇÃO
-                  // ==================================================
-
-                  if (obra
-                      .dataPublicacao !=
-                      null)
-                    _linha(
-                      'Data de publicação',
-                      _formatarData(
-                        obra
-                            .dataPublicacao,
-                      ),
-                    ),
-
-                  // ==================================================
-                  // DESCRIÇÃO
-                  // ==================================================
-
-                  if (obra.descricao
-                      .isNotEmpty)
-                    _linha(
-                      'Descrição',
-                      obra.descricao,
-                    ),
-
-                  const SizedBox(
-                    height: 12,
-                  ),
-
-                  // ==================================================
-                  // BOTÃO ABRIR DOCUMENTO
-                  // ==================================================
-
-                  if (obra.urlDocumento
-                      .trim()
-                      .isNotEmpty)
-                    ElevatedButton.icon(
-                      onPressed:
-                      _abrirDocumento,
-                      icon:
-                      const Icon(
-                        Icons
-                            .picture_as_pdf_outlined,
-                      ),
-                      label:
-                      const Text(
-                        'Abrir documento PDF',
-                      ),
-                      style:
-                      ElevatedButton
-                          .styleFrom(
-                        padding:
-                        const EdgeInsets
-                            .symmetric(
-                          horizontal: 20,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
-                ],
+      child: RichText(
+        text: TextSpan(
+          style: Theme.of(context).textTheme.bodyLarge,
+          children: [
+            TextSpan(
+              text: '$titulo: ',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ),
+            TextSpan(
+              text: valor,
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
