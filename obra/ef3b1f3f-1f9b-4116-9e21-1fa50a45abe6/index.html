@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
+    
+<script>
+(function () {
+  var rotaEsperada = "/obra/ef3b1f3f-1f9b-4116-9e21-1fa50a45abe6";
+
+  var caminhoAtual = window.location.pathname;
+
+  if (
+    caminhoAtual.endsWith('/index.html') ||
+    caminhoAtual === 'https://ginho83-wq.github.io/obra_livre/'
+  ) {
+    window.history.replaceState(
+      null,
+      '',
+      'https://ginho83-wq.github.io/obra_livre' + rotaEsperada + '/'
+    );
+  }
+})();
+</script>
+
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"ScholarlyArticle","headline":"yyyyyyyyyyyyyyyyyyyy","description":"yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy","url":"https://ginho83-wq.github.io/obra_livre/obra/ef3b1f3f-1f9b-4116-9e21-1fa50a45abe6/","author":{"@type":"Person","name":"yyyyyyyyyyyyyyyyyyyyy"},"publisher":{"@type":"Organization","name":"Obra Livre","url":"https://ginho83-wq.github.io/obra_livre/"},"isPartOf":{"@type":"WebSite","name":"Obra Livre","url":"https://ginho83-wq.github.io/obra_livre/"},"articleSection":"Tese de Mestrado","datePublished":"2026-08-24T16:05:49.352+00:00"}</script>
   <base href="/obra_livre/">
 
@@ -38,7 +58,7 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
-    const serviceWorkerVersion = "3050354651" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
+    const serviceWorkerVersion = "2363079310" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
   </script>
 
   <script src="flutter.js" defer></script>

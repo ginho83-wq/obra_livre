@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
+    
+<script>
+(function () {
+  var rotaEsperada = "/obra/a0174aa6-1875-439e-86a8-0be93f7316c3";
+
+  var caminhoAtual = window.location.pathname;
+
+  if (
+    caminhoAtual.endsWith('/index.html') ||
+    caminhoAtual === 'https://ginho83-wq.github.io/obra_livre/'
+  ) {
+    window.history.replaceState(
+      null,
+      '',
+      'https://ginho83-wq.github.io/obra_livre' + rotaEsperada + '/'
+    );
+  }
+})();
+</script>
+
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"ScholarlyArticle","headline":"asasasas","description":"asasasasasasasasasasasasaaassssssssssssssssss","url":"https://ginho83-wq.github.io/obra_livre/obra/a0174aa6-1875-439e-86a8-0be93f7316c3/","author":{"@type":"Person","name":"asasasasa"},"publisher":{"@type":"Organization","name":"Obra Livre","url":"https://ginho83-wq.github.io/obra_livre/"},"isPartOf":{"@type":"WebSite","name":"Obra Livre","url":"https://ginho83-wq.github.io/obra_livre/"},"articleSection":"Monografia","datePublished":"2026-09-02T02:23:48.515+00:00"}</script>
   <base href="/obra_livre/">
 
@@ -38,7 +58,7 @@
   <link rel="manifest" href="manifest.json">
 
   <script>
-    const serviceWorkerVersion = "3050354651" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
+    const serviceWorkerVersion = "2363079310" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
   </script>
 
   <script src="flutter.js" defer></script>
