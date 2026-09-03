@@ -25,7 +25,11 @@
   <base href="/obra_livre/">
 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0"
+  >
 
   <title>uuuuuuuuuuuuuuuuu | Obra Livre</title>
 
@@ -39,7 +43,11 @@
 
   <meta name="googlebot" content="index, follow">
 
+  <meta name="max-image-preview" content="large">
+
   <link rel="canonical" href="https://ginho83-wq.github.io/obra_livre/obra/7dbacc48-62da-44cd-a646-b637f188144b/">
+
+  <!-- Open Graph -->
 
   <meta property="og:title" content="uuuuuuuuuuuuuuuuu | Obra Livre">
 
@@ -51,33 +59,53 @@
 
   <meta property="og:site_name" content="Obra Livre">
 
-  <meta name="theme-color" content="#ffffff">
+  <meta property="og:locale" content="pt_MZ">
 
-  <link rel="icon" type="image/png" href="favicon.png">
+  <meta
+          name="theme-color"
+          content="#ffffff"
+  >
 
-  <link rel="manifest" href="manifest.json">
+  <link
+          rel="icon"
+          type="image/png"
+          href="favicon.png"
+  >
+
+  <link
+          rel="manifest"
+          href="manifest.json"
+  >
 
   <script>
-    const serviceWorkerVersion = "2363079310" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
+    const serviceWorkerVersion = "3697966357" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
   </script>
 
-  <script src="flutter.js" defer></script>
+  <script
+          src="flutter.js"
+          defer
+  ></script>
 </head>
 
 <body>
-  <script>
-    window.addEventListener('load', function () {
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function (engineInitializer) {
-          engineInitializer.initializeEngine().then(function (appRunner) {
+
+<script>
+  window.addEventListener('load', function () {
+    _flutter.loader.loadEntrypoint({
+      serviceWorker: {
+        serviceWorkerVersion: serviceWorkerVersion,
+      },
+
+      onEntrypointLoaded: function (engineInitializer) {
+        engineInitializer
+          .initializeEngine()
+          .then(function (appRunner) {
             appRunner.runApp();
           });
-        }
-      });
+      }
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>

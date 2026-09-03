@@ -4,59 +4,126 @@
   <base href="/obra_livre/">
 
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Obra Livre — Acervo Digital Académico</title>
 
-  <meta name="description" content="Obra Livre é um acervo digital para publicação e exploração de trabalhos académicos, incluindo teses, dissertações, monografias, artigos científicos e literatura.">
+  <meta
+          name="description"
+          content="Obra Livre é um acervo digital para publicação e exploração de trabalhos académicos, incluindo teses, dissertações, monografias, artigos científicos e literatura."
+  >
 
-  <meta name="keywords" content="Obra Livre, acervo académico, trabalhos académicos, teses, dissertações, monografias, artigos científicos, literatura">
+  <meta
+          name="keywords"
+          content="Obra Livre, acervo académico, trabalhos académicos, teses, dissertações, monografias, artigos científicos, literatura"
+  >
 
-  <meta name="author" content="Obra Livre">
+  <meta
+          name="author"
+          content="Obra Livre"
+  >
 
-  <meta name="robots" content="index, follow">
+  <meta
+          name="robots"
+          content="index, follow"
+  >
 
-  <meta name="googlebot" content="index, follow">
+  <meta
+          name="googlebot"
+          content="index, follow"
+  >
 
-  <link rel="canonical" href="https://ginho83-wq.github.io/obra_livre/">
+  <meta
+          name="max-image-preview"
+          content="large"
+  >
 
-  <meta property="og:title" content="Obra Livre — Acervo Digital Académico">
+  <link
+          rel="canonical"
+          href="https://ginho83-wq.github.io/obra_livre/"
+  >
 
-  <meta property="og:description" content="Explore teses, dissertações, monografias, artigos científicos e literatura no Acervo Obra Livre.">
+  <!-- Open Graph -->
 
-  <meta property="og:url" content="https://ginho83-wq.github.io/obra_livre/">
+  <meta
+          property="og:title"
+          content="Obra Livre — Acervo Digital Académico"
+  >
 
-  <meta property="og:type" content="website">
+  <meta
+          property="og:description"
+          content="Explore teses, dissertações, monografias, artigos científicos e literatura no Acervo Obra Livre."
+  >
 
-  <meta property="og:site_name" content="Obra Livre">
+  <meta
+          property="og:url"
+          content="https://ginho83-wq.github.io/obra_livre/"
+  >
 
-  <meta name="theme-color" content="#ffffff">
+  <meta
+          property="og:type"
+          content="website"
+  >
 
-  <link rel="icon" type="image/png" href="favicon.png">
+  <meta
+          property="og:site_name"
+          content="Obra Livre"
+  >
 
-  <link rel="manifest" href="manifest.json">
+  <meta
+          property="og:locale"
+          content="pt_MZ"
+  >
+
+  <meta
+          name="theme-color"
+          content="#ffffff"
+  >
+
+  <link
+          rel="icon"
+          type="image/png"
+          href="favicon.png"
+  >
+
+  <link
+          rel="manifest"
+          href="manifest.json"
+  >
 
   <script>
-    const serviceWorkerVersion = "2363079310" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
+    const serviceWorkerVersion = "3697966357" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
   </script>
 
-  <script src="flutter.js" defer></script>
+  <script
+          src="flutter.js"
+          defer
+  ></script>
 </head>
 
 <body>
-  <script>
-    window.addEventListener('load', function () {
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function (engineInitializer) {
-          engineInitializer.initializeEngine().then(function (appRunner) {
+
+<script>
+  window.addEventListener('load', function () {
+    _flutter.loader.loadEntrypoint({
+      serviceWorker: {
+        serviceWorkerVersion: serviceWorkerVersion,
+      },
+
+      onEntrypointLoaded: function (engineInitializer) {
+        engineInitializer
+          .initializeEngine()
+          .then(function (appRunner) {
             appRunner.runApp();
           });
-        }
-      });
+      }
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>
