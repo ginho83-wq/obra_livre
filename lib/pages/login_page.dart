@@ -1,5 +1,3 @@
-
-
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
@@ -21,17 +19,24 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController =
-  TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  final _passwordController =
-  TextEditingController();
-
-  final SupabaseClient _supabase =
-      Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   bool _carregando = false;
   bool _mostrarSenha = false;
+
+  // ==========================================================
+  // URL DE PRODUÇÃO
+  // ==========================================================
+
+  static const String _urlProducao =
+      'https://ginho83-wq.github.io/obra_livre/';
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
@@ -47,8 +52,7 @@ class _LoginPageState extends State<LoginPage> {
   void _irDepoisDoLogin() {
     final destino = widget.redirect;
 
-    if (destino != null &&
-        destino.trim().isNotEmpty) {
+    if (destino != null && destino.trim().isNotEmpty) {
       context.go(destino);
       return;
     }
@@ -57,15 +61,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // LOGIN
+  // LOGIN COM E-MAIL E SENHA
   // ==========================================================
 
   Future<void> _entrar() async {
-    final email =
-    _emailController.text.trim();
-
-    final senha =
-        _passwordController.text;
+    final email = _emailController.text.trim();
+    final senha = _passwordController.text;
 
     if (email.isEmpty || senha.isEmpty) {
       _mostrarMensagem(
@@ -91,8 +92,7 @@ class _LoginPageState extends State<LoginPage> {
       // LOGIN
       // ======================================================
 
-      final response =
-      await _supabase.auth.signInWithPassword(
+      final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: senha,
       );
@@ -109,20 +109,15 @@ class _LoginPageState extends State<LoginPage> {
       // VERIFICAR SESSÃO
       // ======================================================
 
-      final usuarioAtual =
-          _supabase.auth.currentUser;
-
-      final sessaoAtual =
-          _supabase.auth.currentSession;
+      final usuarioAtual = _supabase.auth.currentUser;
+      final sessaoAtual = _supabase.auth.currentSession;
 
       developer.log(
-        '👤 currentUser: '
-            '${usuarioAtual?.email ?? 'null'}',
+        '👤 currentUser: ${usuarioAtual?.email ?? 'null'}',
       );
 
       developer.log(
-        '🔐 currentSession existe: '
-            '${sessaoAtual != null}',
+        '🔐 currentSession existe: ${sessaoAtual != null}',
       );
 
       if (usuarioAtual == null) {
@@ -191,10 +186,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       _irDepoisDoLogin();
-    } on AuthException catch (
-    e,
-    stackTrace
-    ) {
+    } on AuthException catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO AUTH NO LOGIN',
         e,
@@ -209,10 +201,7 @@ class _LoginPageState extends State<LoginPage> {
         e.message,
         erro: true,
       );
-    } on PostgrestException catch (
-    e,
-    stackTrace
-    ) {
+    } on PostgrestException catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO POSTGRES NO LOGIN',
         e,
@@ -227,10 +216,7 @@ class _LoginPageState extends State<LoginPage> {
         'Erro ao consultar o perfil: ${e.message}',
         erro: true,
       );
-    } catch (
-    e,
-    stackTrace
-    ) {
+    } catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO GERAL NO LOGIN',
         e,
@@ -255,7 +241,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
-  // GOOGLE
+  // LOGIN COM GOOGLE
   // ==========================================================
 
   Future<void> _entrarComGoogle() async {
@@ -270,16 +256,17 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     try {
+      developer.log(
+        '🌐 OAuth redirect: $_urlProducao',
+      );
+
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: Uri.base.origin,
+        redirectTo: _urlProducao,
       );
 
       DiagnosticoSupabase.fim();
-    } on AuthException catch (
-    e,
-    stackTrace
-    ) {
+    } on AuthException catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO AUTH GOOGLE',
         e,
@@ -294,10 +281,7 @@ class _LoginPageState extends State<LoginPage> {
         e.message,
         erro: true,
       );
-    } catch (
-    e,
-    stackTrace
-    ) {
+    } catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO GERAL GOOGLE',
         e,
@@ -343,35 +327,51 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ==========================================================
+  // IR PARA CADASTRO
+  // ==========================================================
+
+  void _irParaCadastro() {
+    final destino = widget.redirect;
+
+    if (destino != null && destino.trim().isNotEmpty) {
+      final url = Uri(
+        path: '/cadastro',
+        queryParameters: {
+          'redirect': destino,
+        },
+      ).toString();
+
+      context.go(url);
+      return;
+    }
+
+    context.go('/cadastro');
+  }
+
+  // ==========================================================
   // BUILD
   // ==========================================================
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
+              constraints: const BoxConstraints(
                 maxWidth: 500,
               ),
               child: Card(
                 elevation: 8,
                 shadowColor: Colors.black12,
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius.circular(24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: Padding(
-                  padding:
-                  const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(32),
                   child: Column(
                     crossAxisAlignment:
                     CrossAxisAlignment.stretch,
@@ -386,12 +386,10 @@ class _LoginPageState extends State<LoginPage> {
 
                       const Text(
                         'Obra Livre',
-                        textAlign:
-                        TextAlign.center,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 28,
-                          fontWeight:
-                          FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
@@ -399,64 +397,57 @@ class _LoginPageState extends State<LoginPage> {
 
                       Text(
                         'Entre na sua conta',
-                        textAlign:
-                        TextAlign.center,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
-                          color:
-                          Colors.grey.shade600,
+                          color: Colors.grey.shade600,
                         ),
                       ),
 
                       const SizedBox(height: 28),
 
+                      // ==================================================
+                      // E-MAIL
+                      // ==================================================
+
                       TextField(
-                        controller:
-                        _emailController,
+                        controller: _emailController,
                         keyboardType:
                         TextInputType.emailAddress,
                         textInputAction:
                         TextInputAction.next,
-                        decoration:
-                        InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'E-mail',
-                          prefixIcon:
-                          const Icon(
+                          prefixIcon: const Icon(
                             Icons.email_outlined,
                           ),
                           filled: true,
-                          fillColor:
-                          Colors.grey.shade50,
-                          border:
-                          OutlineInputBorder(
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(
                             borderRadius:
-                            BorderRadius.circular(
-                              14,
-                            ),
+                            BorderRadius.circular(14),
                           ),
                         ),
                       ),
 
                       const SizedBox(height: 16),
 
+                      // ==================================================
+                      // SENHA
+                      // ==================================================
+
                       TextField(
-                        controller:
-                        _passwordController,
-                        obscureText:
-                        !_mostrarSenha,
+                        controller: _passwordController,
+                        obscureText: !_mostrarSenha,
                         textInputAction:
                         TextInputAction.done,
-                        onSubmitted:
-                            (_) => _entrar(),
-                        decoration:
-                        InputDecoration(
+                        onSubmitted: (_) => _entrar(),
+                        decoration: InputDecoration(
                           labelText: 'Senha',
-                          prefixIcon:
-                          const Icon(
+                          prefixIcon: const Icon(
                             Icons.lock_outline,
                           ),
-                          suffixIcon:
-                          IconButton(
+                          suffixIcon: IconButton(
                             onPressed: () {
                               setState(() {
                                 _mostrarSenha =
@@ -470,26 +461,24 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           filled: true,
-                          fillColor:
-                          Colors.grey.shade50,
-                          border:
-                          OutlineInputBorder(
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(
                             borderRadius:
-                            BorderRadius.circular(
-                              14,
-                            ),
+                            BorderRadius.circular(14),
                           ),
                         ),
                       ),
 
                       const SizedBox(height: 24),
 
+                      // ==================================================
+                      // ENTRAR
+                      // ==================================================
+
                       SizedBox(
                         height: 52,
-                        child:
-                        ElevatedButton(
-                          onPressed:
-                          _carregando
+                        child: ElevatedButton(
+                          onPressed: _carregando
                               ? null
                               : _entrar,
                           child: _carregando
@@ -503,8 +492,7 @@ class _LoginPageState extends State<LoginPage> {
                           )
                               : const Text(
                             'Entrar',
-                            style:
-                            TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight:
                               FontWeight.bold,
@@ -514,6 +502,10 @@ class _LoginPageState extends State<LoginPage> {
                       ),
 
                       const SizedBox(height: 18),
+
+                      // ==================================================
+                      // OU
+                      // ==================================================
 
                       Row(
                         children: [
@@ -525,8 +517,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           Padding(
                             padding:
-                            const EdgeInsets
-                                .symmetric(
+                            const EdgeInsets.symmetric(
                               horizontal: 12,
                             ),
                             child: Text(
@@ -548,12 +539,14 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 18),
 
+                      // ==================================================
+                      // GOOGLE
+                      // ==================================================
+
                       SizedBox(
                         height: 50,
-                        child:
-                        OutlinedButton.icon(
-                          onPressed:
-                          _carregando
+                        child: OutlinedButton.icon(
+                          onPressed: _carregando
                               ? null
                               : _entrarComGoogle,
                           icon: const Text(
@@ -572,47 +565,27 @@ class _LoginPageState extends State<LoginPage> {
 
                       const SizedBox(height: 18),
 
-                      TextButton(
-                        onPressed:
-                        _carregando
-                            ? null
-                            : () {
-                          final destino =
-                              widget.redirect;
+                      // ==================================================
+                      // CADASTRO
+                      // ==================================================
 
-                          if (destino !=
-                              null &&
-                              destino
-                                  .trim()
-                                  .isNotEmpty) {
-                            context.go(
-                              Uri(
-                                path:
-                                '/cadastro',
-                                queryParameters:
-                                {
-                                  'redirect':
-                                  destino,
-                                },
-                              ).toString(),
-                            );
-                          } else {
-                            context.go(
-                              '/cadastro',
-                            );
-                          }
-                        },
+                      TextButton(
+                        onPressed: _carregando
+                            ? null
+                            : _irParaCadastro,
                         child: const Text(
                           'Ainda não tenho uma conta',
                         ),
                       ),
 
+                      // ==================================================
+                      // HOME
+                      // ==================================================
+
                       TextButton(
-                        onPressed:
-                        _carregando
+                        onPressed: _carregando
                             ? null
-                            : () =>
-                            context.go('/'),
+                            : () => context.go('/'),
                         child: const Text(
                           'Voltar para Home',
                         ),
@@ -628,5 +601,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
 

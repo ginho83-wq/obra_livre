@@ -16,33 +16,33 @@ class CadastroPage extends StatefulWidget {
   });
 
   @override
-  State<CadastroPage> createState() =>
-      _CadastroPageState();
+  State<CadastroPage> createState() => _CadastroPageState();
 }
 
-class _CadastroPageState
-    extends State<CadastroPage> {
-  final _formKey =
-  GlobalKey<FormState>();
+class _CadastroPageState extends State<CadastroPage> {
+  final _formKey = GlobalKey<FormState>();
 
-  final _nomeController =
-  TextEditingController();
+  final _nomeController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _senhaController = TextEditingController();
+  final _confirmarSenhaController = TextEditingController();
 
-  final _emailController =
-  TextEditingController();
-
-  final _senhaController =
-  TextEditingController();
-
-  final _confirmarSenhaController =
-  TextEditingController();
-
-  final SupabaseClient _supabase =
-      Supabase.instance.client;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   bool _mostrarSenha = false;
   bool _mostrarConfirmarSenha = false;
   bool _carregando = false;
+
+  // ==========================================================
+  // URL DE PRODUÇÃO
+  // ==========================================================
+
+  static const String _urlProducao =
+      'https://ginho83-wq.github.io/obra_livre/';
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
@@ -50,6 +50,7 @@ class _CadastroPageState
     _emailController.dispose();
     _senhaController.dispose();
     _confirmarSenhaController.dispose();
+
     super.dispose();
   }
 
@@ -68,26 +69,14 @@ class _CadastroPageState
       _carregando = true;
     });
 
-    final nome =
-    _nomeController.text.trim();
+    final nome = _nomeController.text.trim();
+    final email = _emailController.text.trim();
+    final senha = _senhaController.text;
 
-    final email =
-    _emailController.text.trim();
+    DiagnosticoSupabase.inicio('CADASTRO');
 
-    final senha =
-        _senhaController.text;
-
-    DiagnosticoSupabase.inicio(
-      'CADASTRO',
-    );
-
-    developer.log(
-      '👤 Nome: $nome',
-    );
-
-    developer.log(
-      '📧 E-mail: $email',
-    );
+    developer.log('👤 Nome: $nome');
+    developer.log('📧 E-mail: $email');
 
     try {
       // ======================================================
@@ -100,35 +89,29 @@ class _CadastroPageState
       // SIGN UP
       // ======================================================
 
-      final response =
-      await _supabase.auth.signUp(
+      developer.log(
+        '🌐 Email redirect: $_urlProducao',
+      );
+
+      final response = await _supabase.auth.signUp(
         email: email,
         password: senha,
         data: {
           'nome_completo': nome,
         },
+        emailRedirectTo: _urlProducao,
+      );
+
+      developer.log('✅ signUp concluído.');
+      developer.log('👤 User: ${response.user}');
+      developer.log('🆔 User ID: ${response.user?.id}');
+
+      developer.log(
+        '🔐 Session existe: ${response.session != null}',
       );
 
       developer.log(
-        '✅ signUp concluído.',
-      );
-
-      developer.log(
-        '👤 User: ${response.user}',
-      );
-
-      developer.log(
-        '🆔 User ID: ${response.user?.id}',
-      );
-
-      developer.log(
-        '🔐 Session existe: '
-            '${response.session != null}',
-      );
-
-      developer.log(
-        '📨 Email confirmado: '
-            '${response.user?.emailConfirmedAt}',
+        '📨 Email confirmado: ${response.user?.emailConfirmedAt}',
       );
 
       if (response.user == null) {
@@ -137,18 +120,14 @@ class _CadastroPageState
         );
       }
 
-      final userId =
-          response.user!.id;
+      final userId = response.user!.id;
 
       // ======================================================
       // VERIFICAR AUTH
       // ======================================================
 
-      final usuarioAtual =
-          _supabase.auth.currentUser;
-
-      final sessaoAtual =
-          _supabase.auth.currentSession;
+      final usuarioAtual = _supabase.auth.currentUser;
+      final sessaoAtual = _supabase.auth.currentSession;
 
       developer.log(
         '👤 currentUser: '
@@ -212,11 +191,9 @@ class _CadastroPageState
       // VOLTAR PARA LOGIN PRESERVANDO DESTINO
       // ======================================================
 
-      final destino =
-          widget.redirect;
+      final destino = widget.redirect;
 
-      if (destino != null &&
-          destino.trim().isNotEmpty) {
+      if (destino != null && destino.trim().isNotEmpty) {
         context.go(
           Uri(
             path: '/login',
@@ -228,10 +205,7 @@ class _CadastroPageState
       } else {
         context.go('/login');
       }
-    } on AuthException catch (
-    e,
-    stackTrace
-    ) {
+    } on AuthException catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO AUTH NO CADASTRO',
         e,
@@ -246,10 +220,7 @@ class _CadastroPageState
         e.message,
         erro: true,
       );
-    } on PostgrestException catch (
-    e,
-    stackTrace
-    ) {
+    } on PostgrestException catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO POSTGRES NO CADASTRO',
         e,
@@ -264,10 +235,7 @@ class _CadastroPageState
         'Erro na base de dados: ${e.message}',
         erro: true,
       );
-    } catch (
-    e,
-    stackTrace
-    ) {
+    } catch (e, stackTrace) {
       DiagnosticoSupabase.erro(
         'ERRO GERAL NO CADASTRO',
         e,
@@ -339,19 +307,16 @@ class _CadastroPageState
         filled: true,
         fillColor: Colors.grey.shade50,
         border: OutlineInputBorder(
-          borderRadius:
-          BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius:
-          BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
             color: Colors.grey.shade300,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius:
-          BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(
             color: Colors.blue,
             width: 2,
@@ -368,29 +333,23 @@ class _CadastroPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-      const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding:
-            const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints:
-              const BoxConstraints(
+              constraints: const BoxConstraints(
                 maxWidth: 520,
               ),
               child: Card(
                 elevation: 8,
                 shadowColor: Colors.black12,
-                shape:
-                RoundedRectangleBorder(
-                  borderRadius:
-                  BorderRadius.circular(24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
                 ),
                 child: Padding(
-                  padding:
-                  const EdgeInsets.all(32),
+                  padding: const EdgeInsets.all(32),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -407,12 +366,10 @@ class _CadastroPageState
 
                         const Text(
                           'Obra Livre',
-                          textAlign:
-                          TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 28,
-                            fontWeight:
-                            FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
 
@@ -420,24 +377,23 @@ class _CadastroPageState
 
                         Text(
                           'Crie a sua conta',
-                          textAlign:
-                          TextAlign.center,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
-                            color:
-                            Colors.grey.shade600,
+                            color: Colors.grey.shade600,
                           ),
                         ),
 
                         const SizedBox(height: 28),
 
+                        // ==================================================
+                        // NOME
+                        // ==================================================
+
                         _campo(
-                          controller:
-                          _nomeController,
-                          label:
-                          'Nome completo',
-                          icon:
-                          Icons.person_outline,
+                          controller: _nomeController,
+                          label: 'Nome completo',
+                          icon: Icons.person_outline,
                           textInputAction:
                           TextInputAction.next,
                           validator: (value) {
@@ -446,8 +402,7 @@ class _CadastroPageState
                               return 'Digite o seu nome completo.';
                             }
 
-                            if (value.trim().length <
-                                3) {
+                            if (value.trim().length < 3) {
                               return 'Digite um nome válido.';
                             }
 
@@ -457,12 +412,14 @@ class _CadastroPageState
 
                         const SizedBox(height: 16),
 
+                        // ==================================================
+                        // E-MAIL
+                        // ==================================================
+
                         _campo(
-                          controller:
-                          _emailController,
+                          controller: _emailController,
                           label: 'E-mail',
-                          icon:
-                          Icons.email_outlined,
+                          icon: Icons.email_outlined,
                           keyboardType:
                           TextInputType.emailAddress,
                           textInputAction:
@@ -473,16 +430,13 @@ class _CadastroPageState
                               return 'Digite o seu e-mail.';
                             }
 
-                            final email =
-                            value.trim();
+                            final email = value.trim();
 
-                            final regex =
-                            RegExp(
+                            final regex = RegExp(
                               r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
                             );
 
-                            if (!regex
-                                .hasMatch(email)) {
+                            if (!regex.hasMatch(email)) {
                               return 'Digite um e-mail válido.';
                             }
 
@@ -492,18 +446,18 @@ class _CadastroPageState
 
                         const SizedBox(height: 16),
 
+                        // ==================================================
+                        // SENHA
+                        // ==================================================
+
                         _campo(
-                          controller:
-                          _senhaController,
+                          controller: _senhaController,
                           label: 'Senha',
-                          icon:
-                          Icons.lock_outline,
-                          obscureText:
-                          !_mostrarSenha,
+                          icon: Icons.lock_outline,
+                          obscureText: !_mostrarSenha,
                           textInputAction:
                           TextInputAction.next,
-                          suffixIcon:
-                          IconButton(
+                          suffixIcon: IconButton(
                             onPressed: () {
                               setState(() {
                                 _mostrarSenha =
@@ -532,19 +486,20 @@ class _CadastroPageState
 
                         const SizedBox(height: 16),
 
+                        // ==================================================
+                        // CONFIRMAR SENHA
+                        // ==================================================
+
                         _campo(
                           controller:
                           _confirmarSenhaController,
-                          label:
-                          'Confirmar senha',
-                          icon:
-                          Icons.lock_outline,
+                          label: 'Confirmar senha',
+                          icon: Icons.lock_outline,
                           obscureText:
                           !_mostrarConfirmarSenha,
                           textInputAction:
                           TextInputAction.done,
-                          suffixIcon:
-                          IconButton(
+                          suffixIcon: IconButton(
                             onPressed: () {
                               setState(() {
                                 _mostrarConfirmarSenha =
@@ -564,8 +519,7 @@ class _CadastroPageState
                             }
 
                             if (value !=
-                                _senhaController
-                                    .text) {
+                                _senhaController.text) {
                               return 'As senhas não coincidem.';
                             }
 
@@ -575,10 +529,13 @@ class _CadastroPageState
 
                         const SizedBox(height: 24),
 
+                        // ==================================================
+                        // CRIAR CONTA
+                        // ==================================================
+
                         SizedBox(
                           height: 52,
-                          child:
-                          ElevatedButton(
+                          child: ElevatedButton(
                             onPressed:
                             _carregando
                                 ? null
@@ -594,8 +551,7 @@ class _CadastroPageState
                             )
                                 : const Text(
                               'Criar conta',
-                              style:
-                              TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight:
                                 FontWeight.bold,
@@ -606,6 +562,10 @@ class _CadastroPageState
 
                         const SizedBox(height: 18),
 
+                        // ==================================================
+                        // LOGIN
+                        // ==================================================
+
                         OutlinedButton.icon(
                           onPressed:
                           _carregando
@@ -614,17 +574,14 @@ class _CadastroPageState
                             final destino =
                                 widget.redirect;
 
-                            if (destino !=
-                                null &&
+                            if (destino != null &&
                                 destino
                                     .trim()
                                     .isNotEmpty) {
                               context.go(
                                 Uri(
-                                  path:
-                                  '/login',
-                                  queryParameters:
-                                  {
+                                  path: '/login',
+                                  queryParameters: {
                                     'redirect':
                                     destino,
                                   },
@@ -660,12 +617,15 @@ class _CadastroPageState
 
                         const SizedBox(height: 8),
 
+                        // ==================================================
+                        // HOME
+                        // ==================================================
+
                         TextButton(
                           onPressed:
                           _carregando
                               ? null
-                              : () =>
-                              context.go('/'),
+                              : () => context.go('/'),
                           child: const Text(
                             'Voltar para Home',
                           ),
@@ -682,3 +642,4 @@ class _CadastroPageState
     );
   }
 }
+
