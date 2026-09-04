@@ -682,4 +682,3 @@ class _CadastroPageState
     );
   }
 }
-

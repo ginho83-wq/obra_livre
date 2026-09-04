@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/auth_service.dart';
-
 import '../pages/home_page.dart';
 import '../pages/acervo_resultados_page.dart';
 import '../pages/obra_detalhes_page.dart';
@@ -19,13 +18,12 @@ import '../pages/publicacoes_page.dart';
 import '../pages/publicar_page.dart';
 import '../pages/minhas_denuncias_page.dart';
 import '../pages/minhas_solicitacoes_remocao_page.dart';
-
 import '../pages/admin_obras_page.dart';
 import '../pages/admin_search_results_page.dart';
 import '../pages/admin_denuncias_page.dart';
 import '../pages/admin_solicitacoes_remocao_page.dart';
 import '../pages/estatistica_admin_page.dart';
-
+import '../pages/politica_privacidade_page.dart';
 import '../widgets/obra_detalhes_dialog.dart';
 
 // ==========================================================
@@ -58,7 +56,6 @@ class AuthRouterRefresh extends ChangeNotifier {
 // ==========================================================
 
 late final GoRouter router;
-
 late final AuthRouterRefresh _authRouterRefresh;
 
 // ==========================================================
@@ -128,6 +125,17 @@ void initializeRouter() {
           return CadastroPage(
             redirect: redirect,
           );
+        },
+      ),
+
+      // ======================================================
+      // POLÍTICA DE PRIVACIDADE
+      // ======================================================
+
+      GoRoute(
+        path: '/politica-privacidade',
+        builder: (context, state) {
+          return const PoliticaPrivacidadePage();
         },
       ),
 
@@ -245,7 +253,8 @@ void initializeRouter() {
       GoRoute(
         path: '/obra/:id',
         builder: (context, state) {
-          final id = state.pathParameters['id'];
+          final id =
+          state.pathParameters['id'];
 
           if (id == null || id.trim().isEmpty) {
             return const Scaffold(
@@ -387,7 +396,8 @@ void initializeRouter() {
 String _rotaLoginComRetorno(
     GoRouterState state,
     ) {
-  final localizacao = state.uri.toString();
+  final localizacao =
+  state.uri.toString();
 
   return Uri(
     path: '/login',
@@ -423,7 +433,8 @@ Future<String?> _verificarAdministrador(
     BuildContext context,
     GoRouterState state,
     ) async {
-  final usuario = AuthService.usuarioAtual;
+  final usuario =
+      AuthService.usuarioAtual;
 
   if (usuario == null) {
     return _rotaLoginComRetorno(state);
@@ -536,3 +547,4 @@ class _ObraRetornoDenunciaPageState
     );
   }
 }
+
