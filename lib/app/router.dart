@@ -6,13 +6,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/auth_service.dart';
 
+// ============================================================
+// PAGES
+// ============================================================
+
 import '../pages/home_page.dart';
-import '../pages/acervo_resultados_page.dart';
-import '../pages/obra_detalhes_page.dart';
 import '../pages/login_page.dart';
 import '../pages/cadastro_page.dart';
-import '../pages/categoria_page.dart';
-import '../pages/search_results_page.dart';
+import '../pages/auth_callback_page.dart';
+import '../pages/acervo_resultados_page.dart';
+import '../pages/obra_detalhes_page.dart';
 import '../pages/minha_conta_page.dart';
 import '../pages/editar_perfil_page.dart';
 import '../pages/publicacoes_page.dart';
@@ -24,28 +27,30 @@ import '../pages/admin_search_results_page.dart';
 import '../pages/admin_denuncias_page.dart';
 import '../pages/admin_solicitacoes_remocao_page.dart';
 import '../pages/estatistica_admin_page.dart';
+import '../pages/categoria_page.dart';
 import '../pages/politica_privacidade_page.dart';
 import '../pages/termos_page.dart';
 import '../pages/contacto_page.dart';
 import '../pages/cookies_page.dart';
-import '../pages/auth_callback_page.dart';
+
+// ============================================================
+// WIDGETS
+// ============================================================
 
 import '../widgets/obra_detalhes_dialog.dart';
 
-// ==========================================================
+// ============================================================
 // AUTH ROUTER REFRESH
-// ==========================================================
+// ============================================================
 
 class AuthRouterRefresh extends ChangeNotifier {
   late final StreamSubscription<AuthState> _subscription;
 
   AuthRouterRefresh() {
     _subscription =
-        Supabase.instance.client.auth.onAuthStateChange.listen(
-              (_) {
-            notifyListeners();
-          },
-        );
+        Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+          notifyListeners();
+        });
   }
 
   @override
@@ -55,58 +60,61 @@ class AuthRouterRefresh extends ChangeNotifier {
   }
 }
 
-// ==========================================================
+// ============================================================
 // ROUTER
-// ==========================================================
+// ============================================================
 
 late final GoRouter router;
 late final AuthRouterRefresh _authRouterRefresh;
-
-// ==========================================================
-// INICIALIZAR ROUTER
-// ==========================================================
 
 void initializeRouter() {
   _authRouterRefresh = AuthRouterRefresh();
 
   router = GoRouter(
-    // ========================================================
-    // TESTE:
-    // A aplicação começa sempre no LOGIN.
-    // ========================================================
     initialLocation: '/login',
 
     refreshListenable: _authRouterRefresh,
 
+    // ========================================================
+    // ERROR
+    // ========================================================
+
     errorBuilder: (context, state) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Obra Livre'),
+        ),
         body: Center(
           child: Text(
-            'Página não encontrada.',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            'Página não encontrada.\n${state.error}',
+            textAlign: TextAlign.center,
           ),
         ),
       );
     },
 
+    // ========================================================
+    // ROTAS
+    // ========================================================
+
     routes: [
+
       // ======================================================
       // HOME
+      // SOMENTE USUÁRIOS AUTENTICADOS
       // ======================================================
 
       GoRoute(
         path: '/',
+        redirect: _verificarAutenticacao,
         builder: (context, state) {
           return const HomePage();
         },
       ),
 
       // ======================================================
-      // CALLBACK GOOGLE
+      // AUTH CALLBACK - GOOGLE
+      // ESTA ROTA PRECISA CONTINUAR PÚBLICA
       // ======================================================
 
       GoRoute(
@@ -144,12 +152,7 @@ void initializeRouter() {
       GoRoute(
         path: '/cadastro',
         builder: (context, state) {
-          final redirect =
-          state.uri.queryParameters['redirect'];
-
-          return CadastroPage(
-            redirect: redirect,
-          );
+          return const CadastroPage();
         },
       ),
 
@@ -160,26 +163,7 @@ void initializeRouter() {
       GoRoute(
         path: '/acervo',
         builder: (context, state) {
-          final query =
-              state.uri.queryParameters['query'] ?? '';
-
-          final categoria =
-              state.uri.queryParameters['categoria'] ??
-                  'Todas';
-
-          final ano =
-          state.uri.queryParameters['ano'];
-
-          final ordenacao =
-              state.uri.queryParameters['ordenacao'] ??
-                  'Mais recentes';
-
-          return AcervoResultadosPage(
-            query: query,
-            categoria: categoria,
-            ano: ano,
-            ordenacao: ordenacao,
-          );
+          return const AcervoResultadosPage();
         },
       ),
 
@@ -191,27 +175,7 @@ void initializeRouter() {
         path: '/obra/:id',
         builder: (context, state) {
           final id =
-          state.pathParameters['id'];
-
-          if (id == null || id.trim().isEmpty) {
-            return const Scaffold(
-              body: Center(
-                child: Text(
-                  'Obra não encontrada.',
-                ),
-              ),
-            );
-          }
-
-          final abrirDetalhes =
-          state.uri.queryParameters[
-          'abrirDetalhes'];
-
-          if (abrirDetalhes == '1') {
-            return _ObraRetornoDenunciaPage(
-              id: id,
-            );
-          }
+          state.pathParameters['id']!;
 
           return ObraDetalhesPage(
             id: id,
@@ -292,7 +256,7 @@ void initializeRouter() {
       ),
 
       // ======================================================
-      // ADMIN OBRAS
+      // ADMIN - OBRAS
       // ======================================================
 
       GoRoute(
@@ -304,7 +268,7 @@ void initializeRouter() {
       ),
 
       // ======================================================
-      // ADMIN BUSCA
+      // ADMIN - RESULTADOS DE PESQUISA
       // ======================================================
 
       GoRoute(
@@ -321,7 +285,7 @@ void initializeRouter() {
       ),
 
       // ======================================================
-      // ADMIN DENÚNCIAS
+      // ADMIN - DENÚNCIAS
       // ======================================================
 
       GoRoute(
@@ -333,7 +297,7 @@ void initializeRouter() {
       ),
 
       // ======================================================
-      // ADMIN SOLICITAÇÕES DE REMOÇÃO
+      // ADMIN - SOLICITAÇÕES DE REMOÇÃO
       // ======================================================
 
       GoRoute(
@@ -345,7 +309,7 @@ void initializeRouter() {
       ),
 
       // ======================================================
-      // ESTATÍSTICAS
+      // ADMIN - ESTATÍSTICAS
       // ======================================================
 
       GoRoute(
@@ -368,22 +332,6 @@ void initializeRouter() {
 
           return CategoriaPage(
             tipo: categoria,
-          );
-        },
-      ),
-
-      // ======================================================
-      // PESQUISA
-      // ======================================================
-
-      GoRoute(
-        path: '/pesquisa',
-        builder: (context, state) {
-          final query =
-              state.uri.queryParameters['query'] ?? '';
-
-          return SearchResultsPage(
-            query: query,
           );
         },
       ),
@@ -435,27 +383,9 @@ void initializeRouter() {
   );
 }
 
-// ==========================================================
-// LOGIN COM RETORNO
-// ==========================================================
-
-String _rotaLoginComRetorno(
-    GoRouterState state,
-    ) {
-  final localizacao =
-  state.uri.toString();
-
-  return Uri(
-    path: '/login',
-    queryParameters: {
-      'redirect': localizacao,
-    },
-  ).toString();
-}
-
-// ==========================================================
+// ================================================================
 // VERIFICAR AUTENTICAÇÃO
-// ==========================================================
+// ================================================================
 
 String? _verificarAutenticacao(
     BuildContext context,
@@ -471,9 +401,27 @@ String? _verificarAutenticacao(
   return null;
 }
 
-// ==========================================================
+// ================================================================
+// LOGIN COM RETORNO
+// ================================================================
+
+String _rotaLoginComRetorno(
+    GoRouterState state,
+    ) {
+  final localizacao =
+  state.uri.toString();
+
+  return Uri(
+    path: '/login',
+    queryParameters: {
+      'redirect': localizacao,
+    },
+  ).toString();
+}
+
+// ================================================================
 // VERIFICAR ADMINISTRADOR
-// ==========================================================
+// ================================================================
 
 Future<String?> _verificarAdministrador(
     BuildContext context,
@@ -482,9 +430,17 @@ Future<String?> _verificarAdministrador(
   final usuario =
       AuthService.usuarioAtual;
 
+  // ------------------------------------------------------------
+  // NÃO AUTENTICADO
+  // ------------------------------------------------------------
+
   if (usuario == null) {
     return _rotaLoginComRetorno(state);
   }
+
+  // ------------------------------------------------------------
+  // VERIFICAR ADMIN
+  // ------------------------------------------------------------
 
   try {
     final administrador =
@@ -495,35 +451,31 @@ Future<String?> _verificarAdministrador(
     }
 
     return null;
-  } catch (e) {
-    debugPrint(
-      'ERRO AO VERIFICAR ADMINISTRADOR: $e',
-    );
-
+  } catch (_) {
     return '/';
   }
 }
 
-// ==========================================================
-// RETORNO DA DENÚNCIA
-// ==========================================================
+// ================================================================
+// PÁGINA DE RETORNO DE DENÚNCIA
+// ================================================================
 
 class _ObraRetornoDenunciaPage
     extends StatefulWidget {
-  final String id;
+  final String obraId;
 
   const _ObraRetornoDenunciaPage({
-    required this.id,
+    required this.obraId,
   });
 
   @override
-  State<_ObraRetornoDenunciaPage> createState() =>
+  State<_ObraRetornoDenunciaPage>
+  createState() =>
       _ObraRetornoDenunciaPageState();
 }
 
 class _ObraRetornoDenunciaPageState
     extends State<_ObraRetornoDenunciaPage> {
-  bool _dialogAberto = false;
 
   @override
   void initState() {
@@ -536,37 +488,30 @@ class _ObraRetornoDenunciaPageState
   }
 
   Future<void> _abrirDialog() async {
-    if (!mounted || _dialogAberto) {
-      return;
-    }
+    if (!mounted) return;
 
-    _dialogAberto = true;
-
-    await showDialog<void>(
+    await showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
+      builder: (_) {
         return ObraDetalhesDialog(
-          id: widget.id,
+          id: widget.obraId,
         );
       },
     );
 
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     context.go('/');
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+      BuildContext context,
+      ) {
     return const Scaffold(
-      backgroundColor: Colors.white,
       body: Center(
         child: CircularProgressIndicator(),
       ),
     );
   }
 }
-
